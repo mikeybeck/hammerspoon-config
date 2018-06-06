@@ -16,7 +16,15 @@ require "layout"
 
 
 
-
+-- TODO: 
+-- Separate my PRs
+-- Move icons/images to github repo & serve from there
+-- Updated x time ago
+-- Improve automatic refresh
+-- Show if any changes have been made since a PR was clicked - done
+-- Fix indexing so change indicator works properly - done I think
+-- Remove change indicator upon click - done
+-- Add 'mark all as seen' option (perhaps by holding down a key on hover)
 
 
 hs.hotkey.bind({"cmd", "alt", "ctrl"}, "Down", function()
@@ -27,15 +35,19 @@ end)
 
 
 local bitbucket = {}
+local numRuns = 0
+local lines = {}
 
 function test3(username, password)
-   local url = 'https://bitbucket.org/api/2.0/repositories/REPO_OWNER/REPO_SLUG/pullrequests/'
-   local bodyTable = {}
+	local url = 'https://bitbucket.org/api/2.0/repositories/REPO_OWNER/REPO_SLUG/pullrequests/'
+	local bodyTable = {}
 	author_name = '';
 	title = '';
 	num_approvals = 0;
 	approved_by_me = false;
-	lines = {}
+	numRuns = numRuns + 1
+
+	menuItem:setTitle('...')
 
 	hs.http.asyncGet(url, {Authorization = "Basic " .. hs.base64.encode(username .. ":" .. password)}, function(status, body, headers)
 		if status == 200 then
@@ -71,15 +83,6 @@ function test3(username, password)
 						end
 
 					end
-
-					-- print('----------0')
-					-- 	print(author_name)
-					-- print(title)
-					-- print(num_approvals)
-					-- print(approved_by_me)
-					-- print(num_comments)
-					-- print('----------1')
-
 
 					local url3 = value.links.statuses.href
 
@@ -122,11 +125,8 @@ end
 menuItem = hs.menubar.new()
 
 function doMenu(lines)
-	-- if menuItem:isInMenubar() then
-	--     menuItem:removeFromMenuBar()
-	-- end
+      hs.settings.set('menuLines', lines )
 	  if menuItem:isInMenubar() then
-	    hs.alert.show('Reloading PRs...')
 	    menuItem:delete()
 	    menuItem = hs.menubar.new()
 	  end
@@ -145,12 +145,59 @@ function doMenu(lines)
 
 	-- })
 
+		prIcon = hs.image.imageFromURL('https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/Octicons-git-pull-request.svg/180px-Octicons-git-pull-request.svg.png')
+		commentsIcon = hs.image.imageFromURL('https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/Octicons-git-pull-request.svg/180px-Octicons-git-pull-request.svg.png')
+		size = { h = 23, w = 20 }
+		prIcon = prIcon:setSize(size)
+		commentsIcon = commentsIcon:setSize(size)
 
-		menu = {}
+		menu = { { title = "View all open pull requests", 
+		fn = function() hs.urlevent.openURL('https://bitbucket.org/api/2.0/repositories/REPO_OWNER/REPO_SLUG/pullrequests/') end } }
+
+		table.insert(menu, { title = '-' })
 		num_prs = 0
 		num_approved = 0
 		for key, value in pairs(lines) do
-			text = value.author .. ' - ' .. value.title .. ' | ' .. value.approvals .. ' | ' .. value.comments
+			-- if value.prev == nil then
+			-- 	value.prev = { approvals = value.approvals, comments = value.comments }
+			-- end
+			BBprev = hs.settings.get('BBprev')
+            bbkey = value.url:match( "([^/]+)$" )
+
+			if BBprev[bbkey] ~= nil then
+				value.prev = { approvals = BBprev[bbkey].approvals, comments = BBprev[bbkey].comments }
+			else
+				value.prev = { approvals = 0, comments = 0 }
+			end
+
+					print(inspect(value))
+
+print '--------------11'
+										print(inspect(key))
+										print '--------------22'
+										print(inspect(BBprev))
+
+			
+			value.approvals2 = value.approvals .. ' '
+			if value.approvals ~= value.prev.approvals then
+				value.approvals2 = value.approvals .. '*'
+			end
+			value.comments2 = value.comments .. ' '
+			if value.comments ~= 
+				value.prev.comments then
+				value.comments2 = value.comments .. '*'
+			end
+
+			
+			while string.len(value.author) < 12 do
+				value.author = value.author .. ' '
+			end
+
+			while string.len(value.title) < 35 do
+				value.title = value.title .. ' '
+			end
+
+			text = value.author .. ' - ' .. value.title .. ' | 👍 ' .. value.approvals2 .. ' | 💬 ' .. value.comments2
 			color = { red = 0, blue = 0, green = 0 }
 			if value.approvals > 1 and value.state == 'SUCCESSFUL' then
 				color = { red = 0, blue = 0.5, green = 1 }
@@ -158,7 +205,19 @@ function doMenu(lines)
 				 color = { red = 1, blue = 0, green = 0 }
 			end
 
-			line = { title = hs.styledtext.new(text, { color = color }), checked = value.approved, fn = function() hs.urlevent.openURL(value.url) end }
+			line = { title = hs.styledtext.new(text, { color = color, font = 'Monaco' }), checked = value.approved, 
+			fn = function() 
+			hs.urlevent.openURL(value.url) 
+
+            bbkey = value.url:match( "([^/]+)$" )
+            BBprev[bbkey] = { approvals = value.approvals, comments = value.comments }
+
+            hs.settings.set('BBprev', BBprev )
+       		menuLines = hs.settings.get('menuLines')
+		    doMenu(menuLines)
+			end }
+	        
+
 	        table.insert(menu, line)
 	        num_prs = num_prs + 1
 
@@ -167,13 +226,25 @@ function doMenu(lines)
 	        end
 		end
 
+		table.insert(menu, { title = '-' })
+
+		--table.insert(menu, { title = 'Updated ' .. testTimerValue * 5 .. '-' .. updatedTimePlus5 .. ' minutes ago' })
+
 		num_unapproved = num_prs - num_approved
 
 		print(inspect(menu))
 
-		menuItem:setTitle('PRs ' .. num_prs .. '|' .. num_unapproved)
+		menuItem:setTitle(num_prs .. '|' .. num_unapproved)
+
+		
+
+		menuItem:setIcon(prIcon)
 
 		menuItem:setMenu(menu)
+
+	    -- hs.alert.show(testTimerValue)
+
+
 
 end
 
