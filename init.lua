@@ -23,8 +23,8 @@ require "layout"
 -- Improve automatic refresh
 -- Show if any changes have been made since a PR was clicked - done
 -- Fix indexing so change indicator works properly - done I think
--- Remove change indicator upon click - done
--- Add 'mark all as seen' option (perhaps by holding down a key on hover)
+-- Remove change indicator upon click
+-- Add 'mark as seen' option (perhaps by holding down a key on hover) - done - hold down cmd
 
 
 hs.hotkey.bind({"cmd", "alt", "ctrl"}, "Down", function()
@@ -46,6 +46,7 @@ function test3(username, password)
 	num_approvals = 0;
 	approved_by_me = false;
 	numRuns = numRuns + 1
+	lines = {}
 
 	menuItem:setTitle('...')
 
@@ -83,6 +84,15 @@ function test3(username, password)
 						end
 
 					end
+
+					-- print('----------0')
+					-- 	print(author_name)
+					-- print(title)
+					-- print(num_approvals)
+					-- print(approved_by_me)
+					-- print(num_comments)
+					-- print('----------1')
+
 
 					local url3 = value.links.statuses.href
 
@@ -125,25 +135,10 @@ end
 menuItem = hs.menubar.new()
 
 function doMenu(lines)
-      hs.settings.set('menuLines', lines )
 	  if menuItem:isInMenubar() then
 	    menuItem:delete()
 	    menuItem = hs.menubar.new()
 	  end
-	--  hs.menubar:removeFromMenuBar()
-	 -- local menuItem = hs.menubar.new()
-
-
-	-- 		menuItem:setMenu({
-	
-	--       { title = 'title', fn = ''},
-	--       { title = "my menu item", fn = function() print("you clicked my menu item!") end },
-	--       { title = "-" },
-	--       { title = "other item", fn = some_function },
-	--       { title = "disabled item", disabled = true },
-	--       { title = hs.styledtext.new("My text", { color = { red = .5, blue = 1, green = 0 }}), checked = true },
-
-	-- })
 
 		prIcon = hs.image.imageFromURL('https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/Octicons-git-pull-request.svg/180px-Octicons-git-pull-request.svg.png')
 		commentsIcon = hs.image.imageFromURL('https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/Octicons-git-pull-request.svg/180px-Octicons-git-pull-request.svg.png')
@@ -206,15 +201,30 @@ print '--------------11'
 			end
 
 			line = { title = hs.styledtext.new(text, { color = color, font = 'Monaco' }), checked = value.approved, 
-			fn = function() 
-			hs.urlevent.openURL(value.url) 
+			fn = function(keyPressed) 
+			local openURL = true
+			if keyPressed.cmd then
+				openURL = false
+			end
+
+			if openURL then
+				hs.urlevent.openURL(value.url) 
+	       		print(inspect(keyPressed))
+	       	end
+
+			-- hs.urlevent.openURL(value.url)
 
             bbkey = value.url:match( "([^/]+)$" )
             BBprev[bbkey] = { approvals = value.approvals, comments = value.comments }
 
             hs.settings.set('BBprev', BBprev )
-       		menuLines = hs.settings.get('menuLines')
-		    doMenu(menuLines)
+       		print(inspect(value))
+       		print('-------1')
+       		print(inspect(key))
+       		print('-------2')
+       		print(inspect(BBprev))
+       		-- menuLines = hs.settings.get('menuLines')
+       		doMenu(lines)
 			end }
 	        
 
@@ -241,6 +251,10 @@ print '--------------11'
 		menuItem:setIcon(prIcon)
 
 		menuItem:setMenu(menu)
+
+		print(inspect(lines))
+		-- hs.settings.set('menuLines', lines )
+
 
 	    -- hs.alert.show(testTimerValue)
 
