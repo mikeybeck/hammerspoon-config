@@ -7,13 +7,17 @@ local inspect = require 'inspect' -- This isn't *required* but helps with debugg
 -- Updated x time ago
 -- Improve automatic refresh
 -- Show if any changes have been made since a PR was clicked - done
--- Fix indexing so change indicator works properly - done I think
--- Remove change indicator upon click
+-- Fix indexing so change indicator works properly - done
+-- Remove change indicator upon click - done
 -- Add 'mark as seen' option (perhaps by holding down a key on hover) - done - hold down cmd
 
-local config = require 'config'
+--[[ 
+Note:
+Build state currently not functioning; I'm not sure why.
+Build state isn't too important and requires a API call, so disabled for now
+]]
 
-print (config.bitbucket.username)
+local config = require 'config'
 
 hs.hotkey.bind({"cmd", "alt", "ctrl"}, "Down", function()
 	-- test1()
@@ -24,8 +28,6 @@ hs.hotkey.bind({"cmd", "alt", "ctrl"}, "Down", function()
     test3(config.bitbucket.username, config.bitbucket.password)
 
     testDoEveryStart(username, password)
-
---	test4()
 end)
 
 local testTimerValue
@@ -118,34 +120,26 @@ function test3(username, password)
 
 					end
 
-					-- print('----------0')
-					-- 	print(author_name)
-					-- print(title)
-					-- print(num_approvals)
-					-- print(approved_by_me)
-					-- print(num_comments)
-					-- print('----------1')
 
+					-- local url3 = value.links.statuses.href
 
-					local url3 = value.links.statuses.href
+					-- status3, body3, headers3 = hs.http.get(url3, {Authorization = "Basic " .. hs.base64.encode(username .. ":" .. password)})
 
-					status3, body3, headers3 = hs.http.get(url3, {Authorization = "Basic " .. hs.base64.encode(username .. ":" .. password)})
+					-- if status3 == 200 then
+					-- 	body3 = hs.json.decode(body3)
 
-					if status3 == 200 then
-						body3 = hs.json.decode(body3)
+					-- 	print (inspect(body3))
+					-- 							print (inspect(headers3))
+					-- 													print (inspect(url3))
 
-						print (inspect(body3))
-												print (inspect(headers3))
-																		print (inspect(url3))
-
-						values3 = body3.values[0] or body3.values[1]
+					-- 	values3 = body3.values[0] or body3.values[1]
 
 						build_state = 'SUCCESSFUL' --values3.state
 
 				        line = { approved = approved_by_me, author = author_name, title = title, approvals = num_approvals, comments = num_comments, state = build_state, url = link }  --$(_jq '.num_comments') | href=$(_jq '.link_html') color=$colour"
 				        table.insert(lines, line)
 
-					end
+					-- end
 
 				else
 					print("bb call2 failed with status code: " .. status)
@@ -191,9 +185,7 @@ function doMenu(lines)
 		num_prs = 0
 		num_approved = 0
 		for key, value in pairs(lines) do
-			-- if value.prev == nil then
-			-- 	value.prev = { approvals = value.approvals, comments = value.comments }
-			-- end
+
 			BBprev = hs.settings.get('BBprev')
             bbkey = value.url:match( "([^/]+)$" )
 
@@ -246,11 +238,6 @@ function doMenu(lines)
 	            BBprev[bbkey] = { approvals = value.approvals, comments = value.comments }
 
 	            hs.settings.set('BBprev', BBprev )
-	       		print(inspect(value))
-	       		print('-------1')
-	       		print(inspect(key))
-	       		print('-------2')
-	       		print(inspect(BBprev))
 	       		doMenu(lines)
 			end }
 	        
