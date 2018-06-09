@@ -1,19 +1,18 @@
+-- Bitbucket Pull Requests monitor module for Hammerspoon
+-- v0.1
+
 local inspect = require 'inspect' -- This isn't *required* but helps with debugging.  Remove this line if you don't have this file.
 
 
--- TODO: 
+-- TODO:
 -- Separate my PRs
 -- Move icons/images to github repo & serve from there
--- Updated x time ago
+-- Updated x time ago (currently displays 'updated at time')
 -- Improve automatic refresh
--- Show if any changes have been made since a PR was clicked - done
--- Fix indexing so change indicator works properly - done
--- Remove change indicator upon click - done
--- Add 'mark as seen' option (perhaps by holding down a key on hover) - done - hold down cmd
 
---[[ 
+--[[
 Note:
-Build state currently not functioning; I'm not sure why.
+Build state currently not functioning; I'm not sure why - the BB API isn't returning the status value
 Build state isn't too important and requires a API call, so disabled for now
 ]]
 
@@ -36,7 +35,7 @@ function testDoEveryStart(username, password)
   -- assertIsNil(testTimerValue)
   testTimerValue = 0
 
-  testTimer = hs.timer.doEvery(60, function()                                  
+  testTimer = hs.timer.doEvery(60, function()
         if type(testTimerValue) == "number" then
           if testTimerValue > 60 then
             testTimerValue = true
@@ -71,6 +70,7 @@ end)
 
 local bitbucket = {}
 local numRuns = 0
+local lastUpdatedAt
 
 
 function test3(username, password)
@@ -150,11 +150,14 @@ function test3(username, password)
 		else
 			print("bb call failed with status code: " .. status)
 
-		end
+        end
 
-	    print(inspect(lines))
-
-
+        -- Get current time for 'last updated at' value
+        local hour = os.date("%I")
+        if string.sub(hour, 1, 1) == '0' then
+            hour = string.sub(hour, 2)
+        end
+        lastUpdatedAt = os.date(hour .. ":%M:%S %p")
         doMenu(lines)
 
 	end)
@@ -177,7 +180,7 @@ function doMenu(lines)
 		prIcon = prIcon:setSize(size)
 		commentsIcon = commentsIcon:setSize(size)
 
-		menu = { { title = "View all open pull requests", 
+		menu = { { title = "View all open pull requests",
 		fn = function() hs.urlevent.openURL('https://bitbucket.org/blasttechnologies/arena/pull-requests/') end } }
 
 		table.insert(menu, { title = '-' })
@@ -195,24 +198,27 @@ function doMenu(lines)
 				value.prev = { approvals = 0, comments = 0 }
 			end
 
-			
+
 			value.approvals2 = value.approvals .. ' '
 			if value.approvals ~= value.prev.approvals then
 				value.approvals2 = value.approvals .. '*'
 			end
 			value.comments2 = value.comments .. ' '
-			if value.comments ~= 
+			if value.comments ~=
 				value.prev.comments then
 				value.comments2 = value.comments .. '*'
 			end
 
-			
-			while string.len(value.author) < 12 do
+			while string.len(value.author) < 15 do
 				value.author = value.author .. ' '
 			end
 
-			while string.len(value.title) < 35 do
-				value.title = value.title .. ' '
+			if string.len(value.title) > 35 then
+				value.title = string.sub(value.title, 0, 32) .. '...'
+			else
+				while string.len(value.title) < 35 do
+					value.title = value.title .. ' '
+				end
 			end
 
 			text = value.author .. ' - ' .. value.title .. ' | 👍 ' .. value.approvals2 .. ' | 💬 ' .. value.comments2
@@ -223,15 +229,15 @@ function doMenu(lines)
 				 color = { red = 1, blue = 0, green = 0 }
 			end
 
-			line = { title = hs.styledtext.new(text, { color = color, font = 'Monaco' }), checked = value.approved, 
-			fn = function(keyPressed) 
+			line = { title = hs.styledtext.new(text, { color = color, font = 'Monaco' }), checked = value.approved,
+			fn = function(keyPressed)
 				local openURL = true
 				if keyPressed.cmd then
 					openURL = false
 				end
 
 				if openURL then
-					hs.urlevent.openURL(value.url) 
+					hs.urlevent.openURL(value.url)
 		       	end
 
 	            bbkey = value.url:match( "([^/]+)$" )
@@ -240,7 +246,7 @@ function doMenu(lines)
 	            hs.settings.set('BBprev', BBprev )
 	       		doMenu(lines)
 			end }
-	        
+
 
 	        table.insert(menu, line)
 	        num_prs = num_prs + 1
@@ -250,14 +256,14 @@ function doMenu(lines)
 	        end
 		end
 
-
-		--table.insert(menu, { title = 'Updated ' .. testTimerValue * 5 .. '-' .. updatedTimePlus5 .. ' minutes ago' })
+        table.insert(menu, { title = '-' })
+        table.insert(menu, { title = 'Last updated at ' .. lastUpdatedAt })
 
 		num_unapproved = num_prs - num_approved
 
 		print(inspect(menu))
 
-		menuItem:setTitle(num_prs .. '|' .. num_unapproved)		
+		menuItem:setTitle(num_prs .. '|' .. num_unapproved)
 
 		menuItem:setIcon(prIcon)
 
