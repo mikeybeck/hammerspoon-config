@@ -3,7 +3,7 @@ My Hammerspoon config
 
 Includes layout.lua which enables a few layout modification hotkeys
 
-and init.lua which contains mostly testing stuff - in particular a Bitbucket pull request checker for the menu bar.  I hope to replicate my Bitbar plugin https://github.com/mikeybeck/bitbar-bitbucketPRs
+and init.lua which contains mostly testing stuff - in particular a Bitbucket pull request checker for the menu bar.  This replicates and improves upon the functionality of my Bitbar plugin https://github.com/mikeybeck/bitbar-bitbucketPRs (which I have no plans to develop further at this stage).
 
 ## How to use the Bitbucket Pull Requests module:
 
