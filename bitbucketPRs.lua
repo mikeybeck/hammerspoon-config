@@ -1,5 +1,5 @@
 -- Bitbucket Pull Requests monitor module for Hammerspoon
--- v0.21
+-- v0.22
 
 local inspect = require 'inspect' -- This isn't *required* but helps with debugging.  Remove this line if you don't have this file.
 
@@ -31,9 +31,8 @@ function refreshPeriodically(username, password)
   refreshTimer = hs.timer.doEvery(300, function()
         if timerValue > 20 then
             refreshTimer.stop()
-        elseif timerValue % 5 == 0 then
-            getPRs(username, password)
         end
+        getPRs(username, password)
         timerValue = timerValue + 1
     end)
 end
