@@ -26,22 +26,17 @@ end)
 local testTimerValue
 
 function refreshPeriodically(username, password)
-  testTimerValue = 0
+  timerValue = 0
 
-  testTimer = hs.timer.doEvery(60, function()
-        if type(testTimerValue) == "number" then
-          if testTimerValue > 60 then
-            testTimerValue = true
-          elseif testTimerValue % 5 == 0 then
+  refreshTimer = hs.timer.doEvery(300, function()
+        if timerValue > 20 then
+            refreshTimer.stop()
+        elseif timerValue % 5 == 0 then
             getPRs(username, password)
-          end
-          testTimerValue = testTimerValue + 1
         end
-      end)
-  -- assertTrue(testTimer:running())
-
+        timerValue = timerValue + 1
+    end)
 end
-
 
 
 hs.hotkey.bind({"cmd", "alt", "ctrl"}, "x", function()

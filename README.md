@@ -15,6 +15,7 @@ and init.lua which contains mostly testing stuff - in particular a Bitbucket pul
 
 ### Bitbucket Pull Requests Module Changelog:
 
+- 0.21: Fix auto refresh stop
 - 0.2: Fix auto refresh so it actually works
 - 0.12: Add 'updated at' date
 - 0.11: Add 'updated at' time
