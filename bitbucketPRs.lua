@@ -1,5 +1,5 @@
 -- Bitbucket Pull Requests monitor module for Hammerspoon
--- v0.12
+-- v0.2
 
 local inspect = require 'inspect' -- This isn't *required* but helps with debugging.  Remove this line if you don't have this file.
 
@@ -8,7 +8,6 @@ local inspect = require 'inspect' -- This isn't *required* but helps with debugg
 -- Separate my PRs
 -- Move icons/images to github repo & serve from there
 -- Updated x time ago (currently displays 'updated at time').  Not sure if this is really possible...
--- Improve automatic refresh
 
 --[[
 Note:
@@ -19,20 +18,14 @@ Build state isn't too important and requires a API call, so disabled for now
 local config = require 'config'
 
 hs.hotkey.bind({"cmd", "alt", "ctrl"}, "Down", function()
-	-- test1()
-	-- test2()
-    hs.alert.show('testing')
-
-    -- hs.timer.new(5, function() hs.alert.show('timer') end)
     getPRs(config.bitbucket.username, config.bitbucket.password)
 
-    refreshPeriodically(username, password)
+    refreshPeriodically(config.bitbucket.username, config.bitbucket.password)
 end)
 
 local testTimerValue
 
 function refreshPeriodically(username, password)
-  -- assertIsNil(testTimerValue)
   testTimerValue = 0
 
   testTimer = hs.timer.doEvery(60, function()
@@ -41,14 +34,8 @@ function refreshPeriodically(username, password)
             testTimerValue = true
           elseif testTimerValue % 5 == 0 then
             getPRs(username, password)
-            testTimerValue = testTimerValue + 1
-            	print(testTimerValue)
-            		      hs.alert.show('Reloading PRs')
-
-          -- else
-          	-- Update time in menu
-
           end
+          testTimerValue = testTimerValue + 1
         end
       end)
   -- assertTrue(testTimer:running())
@@ -58,13 +45,9 @@ end
 
 
 hs.hotkey.bind({"cmd", "alt", "ctrl"}, "x", function()
-	-- test1()
-	-- test2()
     hs.alert.show('Reloading PRs...')
 
 	getPRs(config.bitbucket.username, config.bitbucket.password)
-
---	test4()
 end)
 
 
@@ -275,11 +258,5 @@ function doMenu(lines)
 
         menuItem:setMenu(menu)
 
-
-
 		print(inspect(lines))
-		-- hs.settings.set('menuLines', lines )
-
-
-	    -- hs.alert.show(testTimerValue)
 end
