@@ -1,5 +1,5 @@
 -- Bitbucket Pull Requests monitor module for Hammerspoon
--- v0.1
+-- v0.12
 
 local inspect = require 'inspect' -- This isn't *required* but helps with debugging.  Remove this line if you don't have this file.
 
@@ -7,12 +7,12 @@ local inspect = require 'inspect' -- This isn't *required* but helps with debugg
 -- TODO:
 -- Separate my PRs
 -- Move icons/images to github repo & serve from there
--- Updated x time ago (currently displays 'updated at time')
+-- Updated x time ago (currently displays 'updated at time').  Not sure if this is really possible...
 -- Improve automatic refresh
 
 --[[
 Note:
-Build state currently not functioning; I'm not sure why - the BB API isn't returning the status value
+Build state currently not functioning; I'm not sure why the BB API isn't returning the status value
 Build state isn't too important and requires a API call, so disabled for now
 ]]
 
@@ -24,14 +24,14 @@ hs.hotkey.bind({"cmd", "alt", "ctrl"}, "Down", function()
     hs.alert.show('testing')
 
     -- hs.timer.new(5, function() hs.alert.show('timer') end)
-    test3(config.bitbucket.username, config.bitbucket.password)
+    getPRs(config.bitbucket.username, config.bitbucket.password)
 
-    testDoEveryStart(username, password)
+    refreshPeriodically(username, password)
 end)
 
 local testTimerValue
 
-function testDoEveryStart(username, password)
+function refreshPeriodically(username, password)
   -- assertIsNil(testTimerValue)
   testTimerValue = 0
 
@@ -40,7 +40,7 @@ function testDoEveryStart(username, password)
           if testTimerValue > 60 then
             testTimerValue = true
           elseif testTimerValue % 5 == 0 then
-            test3(username, password)
+            getPRs(username, password)
             testTimerValue = testTimerValue + 1
             	print(testTimerValue)
             		      hs.alert.show('Reloading PRs')
@@ -62,7 +62,7 @@ hs.hotkey.bind({"cmd", "alt", "ctrl"}, "x", function()
 	-- test2()
     hs.alert.show('Reloading PRs...')
 
-	test3(config.bitbucket.username, config.bitbucket.password)
+	getPRs(config.bitbucket.username, config.bitbucket.password)
 
 --	test4()
 end)
@@ -70,10 +70,10 @@ end)
 
 local bitbucket = {}
 local numRuns = 0
-local lastUpdatedAt
+local lastUpdatedAt = {}
 
 
-function test3(username, password)
+function getPRs(username, password)
 	local url = 'https://bitbucket.org/api/2.0/repositories/'.. config.bitbucket.repo_owner ..'/'.. config.bitbucket.repo_slug ..'/pullrequests/'
 	local bodyTable = {}
 	author_name = '';
@@ -157,7 +157,8 @@ function test3(username, password)
         if string.sub(hour, 1, 1) == '0' then
             hour = string.sub(hour, 2)
         end
-        lastUpdatedAt = os.date(hour .. ":%M:%S %p")
+        lastUpdatedAt.time = os.date(hour .. ":%M:%S %p")
+        lastUpdatedAt.date = os.date("%x")
         doMenu(lines)
 
 	end)
@@ -257,7 +258,12 @@ function doMenu(lines)
 		end
 
         table.insert(menu, { title = '-' })
-        table.insert(menu, { title = 'Last updated at ' .. lastUpdatedAt })
+
+        if lastUpdatedAt.date ~= os.date("%x") then
+            table.insert(menu, { title = 'Last updated on ' .. lastUpdatedAt.date .. ' at ' .. lastUpdatedAt.time })
+        else
+            table.insert(menu, { title = 'Last updated today at ' .. lastUpdatedAt.time })
+        end
 
 		num_unapproved = num_prs - num_approved
 
@@ -267,7 +273,8 @@ function doMenu(lines)
 
 		menuItem:setIcon(prIcon)
 
-		menuItem:setMenu(menu)
+        menuItem:setMenu(menu)
+
 
 
 		print(inspect(lines))
@@ -276,4 +283,3 @@ function doMenu(lines)
 
 	    -- hs.alert.show(testTimerValue)
 end
-
