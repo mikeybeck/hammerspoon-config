@@ -15,5 +15,6 @@ and init.lua which contains mostly testing stuff - in particular a Bitbucket pul
 
 ### Bitbucket Pull Requests Module Changelog:
 
+- 0.12: Add 'updated at' date
 - 0.11: Add 'updated at' time
 - 0.1: Initial beta release
