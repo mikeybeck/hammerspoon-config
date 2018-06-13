@@ -1,5 +1,5 @@
 -- Bitbucket Pull Requests monitor module for Hammerspoon
--- v0.22
+-- v0.23
 
 local inspect = require 'inspect' -- This isn't *required* but helps with debugging.  Remove this line if you don't have this file.
 
@@ -136,6 +136,7 @@ function getPRs(username, password)
         if string.sub(hour, 1, 1) == '0' then
             hour = string.sub(hour, 2)
         end
+        lastUpdatedAt.hour = os.date("%I")
         lastUpdatedAt.time = os.date(hour .. ":%M:%S %p")
         lastUpdatedAt.date = os.date("%x")
         doMenu(lines)
@@ -246,9 +247,15 @@ function doMenu(lines)
 
 		num_unapproved = num_prs - num_approved
 
-		print(inspect(menu))
+        menuColour = { red = 0, blue = 0, green = 0 }
+        if lastUpdatedAt.hour - os.date("%I") > 1 then
+            -- PRs not being updated automatically
+            menuColour = { red = 0.6, blue = 0, green = 0 }
+        end
 
-		menuItem:setTitle(num_prs .. '|' .. num_unapproved)
+        menuItem:setTitle(hs.styledtext.new(num_prs, { color = menuColour, superscript = 1, baselineOffset = -3.0, paragraphStyle = { alignment = 'right'}})  ..
+        hs.styledtext.new('/', { color = menuColour, superscript = 0, baselineOffset = -1.0}) ..
+        hs.styledtext.new(num_unapproved, { color = menuColour, superscript = -1, paragraphStyle = { alignment = 'left'}}))
 
 		menuItem:setIcon(prIcon)
 

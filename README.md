@@ -16,6 +16,7 @@ and init.lua which contains mostly testing stuff - in particular a Bitbucket pul
 ### Bitbucket Pull Requests Module Changelog:
 
 
+- 0.23: Make menu numbers smaller and red when no longer auto-updating
 - 0.22: Actually fix auto refresh this time
 - 0.21: Fix auto refresh stop
 - 0.2: Fix auto refresh so it actually works
