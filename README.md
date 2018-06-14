@@ -16,6 +16,7 @@ and init.lua which contains mostly testing stuff - in particular a Bitbucket pul
 ### Bitbucket Pull Requests Module Changelog:
 
 
+- 0.301: Fix not-updating colour bug
 - 0.3: Move my PRs to the bottom of the menu and separate them from the rest
 - 0.231: Fix - Actually make numbers red when no longer auto-updating
 - 0.23: Make menu numbers red when no longer auto-updating

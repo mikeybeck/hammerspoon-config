@@ -1,5 +1,5 @@
 -- Bitbucket Pull Requests monitor module for Hammerspoon
--- v0.3
+-- v0.301
 
 local inspect = require 'inspect' -- This isn't *required* but helps with debugging.  Remove this line if you don't have this file.
 
@@ -23,9 +23,10 @@ hs.hotkey.bind({"cmd", "alt", "ctrl"}, "Down", function()
     refreshPeriodically(config.bitbucket.username, config.bitbucket.password)
 end)
 
-local timerValue = 0
+local timerValue
 
 function refreshPeriodically(username, password)
+  timerValue = 0
   refreshTimer = hs.timer.doEvery(300, function()
         if timerValue > 20 then
             refreshTimer.stop()
