@@ -1,5 +1,5 @@
 -- Bitbucket Pull Requests monitor module for Hammerspoon
--- v0.23
+-- v0.231
 
 local inspect = require 'inspect' -- This isn't *required* but helps with debugging.  Remove this line if you don't have this file.
 
@@ -24,11 +24,9 @@ hs.hotkey.bind({"cmd", "alt", "ctrl"}, "Down", function()
     refreshPeriodically(config.bitbucket.username, config.bitbucket.password)
 end)
 
-local testTimerValue
+local timerValue = 0
 
 function refreshPeriodically(username, password)
-  timerValue = 0
-
   refreshTimer = hs.timer.doEvery(300, function()
         if timerValue > 20 then
             refreshTimer.stop()
@@ -247,8 +245,8 @@ function doMenu(lines)
 		num_unapproved = num_prs - num_approved
 
         menuColour = { red = 0, blue = 0, green = 0 }
-        if lastUpdatedAt.hour - os.date("%I") > 1 then
-            -- PRs not being updated automatically
+        if timerValue > 19 then
+            -- PRs no longer being updated automatically
             menuColour = { red = 0.6, blue = 0, green = 0 }
         end
 
@@ -260,5 +258,5 @@ function doMenu(lines)
 
         menuItem:setMenu(menu)
 
-		print(inspect(lines))
+        print(inspect(lines))
 end
