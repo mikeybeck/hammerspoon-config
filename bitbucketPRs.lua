@@ -1,11 +1,10 @@
 -- Bitbucket Pull Requests monitor module for Hammerspoon
--- v0.231
+-- v0.3
 
 local inspect = require 'inspect' -- This isn't *required* but helps with debugging.  Remove this line if you don't have this file.
 
 
 -- TODO:
--- Separate my PRs
 -- Move icons/images to github repo & serve from there
 -- Updated x time ago (currently displays 'updated at time').  Not sure if this is really possible...
 -- Add auto-update time/day settings, e.g. run 9am-6pm Mon-Fri
@@ -58,6 +57,7 @@ function getPRs(username, password)
 	approved_by_me = false;
 	numRuns = numRuns + 1
 	lines = {}
+	myPRs = {}
 
 	menuItem:setTitle('...')
 
@@ -110,10 +110,15 @@ function getPRs(username, password)
 
 					-- 	values3 = body3.values[0] or body3.values[1]
 
-						build_state = 'SUCCESSFUL' --values3.state
+                        build_state = 'SUCCESSFUL' --values3.state
 
-				        line = { approved = approved_by_me, author = author_name, title = title, approvals = num_approvals, comments = num_comments, state = build_state, url = link }  --$(_jq '.num_comments') | href=$(_jq '.link_html') color=$colour"
-				        table.insert(lines, line)
+                        line = { approved = approved_by_me, author = author_name, title = title, approvals = num_approvals, comments = num_comments, state = build_state, url = link }
+
+                        if author_name == 'Mike Beck' then
+                            table.insert(myPRs, line)
+                        else
+                            table.insert(lines, line)
+                        end
 
 					-- end
 
@@ -136,6 +141,12 @@ function getPRs(username, password)
         lastUpdatedAt.hour = os.date("%I")
         lastUpdatedAt.time = os.date(hour .. ":%M:%S %p")
         lastUpdatedAt.date = os.date("%x")
+
+        -- Add my PRs to end of lines
+        for i=1, #myPRs do
+            lines[#lines+1] = myPRs[i]
+        end
+
         doMenu(lines)
 
 	end)
@@ -164,8 +175,14 @@ function doMenu(lines)
 		table.insert(menu, { title = '-' })
 
 		num_prs = 0
-		num_approved = 0
-		for key, value in pairs(lines) do
+        num_approved = 0
+        added_mine = false
+        for key, value in pairs(lines) do
+
+            if value.author == 'Mike Beck' and not added_mine then
+                table.insert(menu, { title = '-' })
+                added_mine = true
+            end
 
 			BBprev = hs.settings.get('BBprev')
             bbkey = value.url:match( "([^/]+)$" )
