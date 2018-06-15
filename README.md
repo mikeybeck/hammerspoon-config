@@ -16,6 +16,10 @@ and init.lua which contains mostly testing stuff - in particular a Bitbucket pul
 ### Bitbucket Pull Requests Module Changelog:
 
 
+- 0.311: Some refactoring,
+        reverse num_prs and unapproved_prs,
+        add my_name, refresh_freq and refresh_num to config file,
+        remove hard coded repo details
 - 0.301: Fix not-updating colour bug
 - 0.3: Move my PRs to the bottom of the menu and separate them from the rest
 - 0.231: Fix - Actually make numbers red when no longer auto-updating

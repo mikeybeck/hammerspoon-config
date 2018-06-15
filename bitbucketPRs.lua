@@ -1,13 +1,13 @@
 -- Bitbucket Pull Requests monitor module for Hammerspoon
--- v0.301
+-- v0.31
 
 local inspect = require 'inspect' -- This isn't *required* but helps with debugging.  Remove this line if you don't have this file.
-
 
 -- TODO:
 -- Move icons/images to github repo & serve from there
 -- Updated x time ago (currently displays 'updated at time').  Not sure if this is really possible...
 -- Add auto-update time/day settings, e.g. run 9am-6pm Mon-Fri
+-- Add remote branch (e.g. beta, production) indicator
 
 --[[
 Note:
@@ -20,15 +20,15 @@ local config = require 'config'
 hs.hotkey.bind({"cmd", "alt", "ctrl"}, "Down", function()
     getPRs(config.bitbucket.username, config.bitbucket.password)
 
-    refreshPeriodically(config.bitbucket.username, config.bitbucket.password)
+    autoRefresh(config.bitbucket.username, config.bitbucket.password)
 end)
 
 local timerValue
 
-function refreshPeriodically(username, password)
+function autoRefresh(username, password)
   timerValue = 0
-  refreshTimer = hs.timer.doEvery(300, function()
-        if timerValue > 20 then
+  refreshTimer = hs.timer.doEvery(config.bitbucket.refresh_freq, function()
+        if timerValue > config.bitbucket.refresh_num then
             refreshTimer.stop()
         end
         getPRs(username, password)
@@ -44,10 +44,7 @@ hs.hotkey.bind({"cmd", "alt", "ctrl"}, "x", function()
 end)
 
 
-local bitbucket = {}
-local numRuns = 0
 local lastUpdatedAt = {}
-
 
 function getPRs(username, password)
 	local url = 'https://bitbucket.org/api/2.0/repositories/'.. config.bitbucket.repo_owner ..'/'.. config.bitbucket.repo_slug ..'/pullrequests/'
@@ -56,8 +53,7 @@ function getPRs(username, password)
 	title = '';
 	num_approvals = 0;
 	approved_by_me = false;
-	numRuns = numRuns + 1
-	lines = {}
+	otherPRs = {}
 	myPRs = {}
 
 	menuItem:setTitle('...')
@@ -91,7 +87,7 @@ function getPRs(username, password)
 
 						participant_name = value2.user.display_name
 
-						if participant_name == 'Mike Beck' and value2.approved then
+						if participant_name == config.bitbucket.my_name and value2.approved then
 							approved_by_me = true
 						end
 
@@ -115,10 +111,10 @@ function getPRs(username, password)
 
                         line = { approved = approved_by_me, author = author_name, title = title, approvals = num_approvals, comments = num_comments, state = build_state, url = link }
 
-                        if author_name == 'Mike Beck' then
+                        if author_name == config.bitbucket.my_name then
                             table.insert(myPRs, line)
                         else
-                            table.insert(lines, line)
+                            table.insert(otherPRs, line)
                         end
 
 					-- end
@@ -139,26 +135,25 @@ function getPRs(username, password)
         if string.sub(hour, 1, 1) == '0' then
             hour = string.sub(hour, 2)
         end
-        lastUpdatedAt.hour = os.date("%I")
+
         lastUpdatedAt.time = os.date(hour .. ":%M:%S %p")
         lastUpdatedAt.date = os.date("%x")
 
-        -- Add my PRs to end of lines
-        for i=1, #myPRs do
-            lines[#lines+1] = myPRs[i]
+        -- Add my PRs to other PRs
+        local allPRs = otherPRs
+        for i = 1, #myPRs do
+            allPRs[#allPRs + 1] = myPRs[i]
         end
 
-        doMenu(lines)
+        doMenu(allPRs)
 
 	end)
-
-	return bodyTable
 
 end
 
 menuItem = hs.menubar.new()
 
-function doMenu(lines)
+function doMenu(allPRs)
 	  if menuItem:isInMenubar() then
 	    menuItem:delete()
 	    menuItem = hs.menubar.new()
@@ -171,16 +166,16 @@ function doMenu(lines)
 		commentsIcon = commentsIcon:setSize(size)
 
 		menu = { { title = "View all open pull requests",
-		fn = function() hs.urlevent.openURL('https://bitbucket.org/blasttechnologies/arena/pull-requests/') end } }
+        fn = function() hs.urlevent.openURL('https://bitbucket.org/'.. config.bitbucket.repo_owner ..'/'.. config.bitbucket.repo_slug ..'/pull-requests/') end } }
 
 		table.insert(menu, { title = '-' })
 
 		num_prs = 0
         num_approved = 0
         added_mine = false
-        for key, value in pairs(lines) do
+        for key, value in pairs(allPRs) do
 
-            if value.author == 'Mike Beck' and not added_mine then
+            if value.author == config.bitbucket.my_name and not added_mine then
                 table.insert(menu, { title = '-' })
                 added_mine = true
             end
@@ -192,13 +187,13 @@ function doMenu(lines)
 				value.prev = { approvals = BBprev[bbkey].approvals, comments = BBprev[bbkey].comments }
 			else
 				value.prev = { approvals = 0, comments = 0 }
-			end
-
+            end
 
 			value.approvals2 = value.approvals .. ' '
 			if value.approvals ~= value.prev.approvals then
 				value.approvals2 = value.approvals .. '*'
-			end
+            end
+
 			value.comments2 = value.comments .. ' '
 			if value.comments ~=
 				value.prev.comments then
@@ -240,7 +235,7 @@ function doMenu(lines)
 	            BBprev[bbkey] = { approvals = value.approvals, comments = value.comments }
 
 	            hs.settings.set('BBprev', BBprev )
-	       		doMenu(lines)
+	       		doMenu(allPRs)
 			end }
 
 
@@ -263,18 +258,18 @@ function doMenu(lines)
 		num_unapproved = num_prs - num_approved
 
         menuColour = { red = 0, blue = 0, green = 0 }
-        if timerValue > 19 then
+        if timerValue >= config.bitbucket.refresh_num then
             -- PRs no longer being updated automatically
-            menuColour = { red = 0.6, blue = 0, green = 0 }
+            menuColour = { red = 0.7, blue = 0, green = 0 }
         end
 
-        menuItem:setTitle(hs.styledtext.new(num_prs, { color = menuColour, superscript = 1, baselineOffset = -3.0, paragraphStyle = { alignment = 'right'}})  ..
+        menuItem:setTitle(hs.styledtext.new(num_unapproved, { color = menuColour, superscript = 1, baselineOffset = -3.0, paragraphStyle = { alignment = 'right'}})  ..
         hs.styledtext.new('/', { color = menuColour, superscript = 0, baselineOffset = -1.0}) ..
-        hs.styledtext.new(num_unapproved, { color = menuColour, superscript = -1, paragraphStyle = { alignment = 'left'}}))
+        hs.styledtext.new(num_prs, { color = menuColour, superscript = -1, paragraphStyle = { alignment = 'left'}}))
 
 		menuItem:setIcon(prIcon)
 
         menuItem:setMenu(menu)
 
-        print(inspect(lines))
+        print(inspect(allPRs))
 end
