@@ -23,6 +23,8 @@ menubar.init()
 
 require "bitbucketPRs"
 
+require "muteMic"
+
 
 
 hs.hotkey.bind({"cmd", "alt", "ctrl"}, "Space", function()
