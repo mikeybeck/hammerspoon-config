@@ -16,6 +16,7 @@ and init.lua which contains mostly testing stuff - in particular a Bitbucket pul
 ### Bitbucket Pull Requests Module Changelog:
 
 
+- 0.32: Exclude own PRs from number unapproved
 - 0.311: Some refactoring,
         reverse num_prs and unapproved_prs,
         add my_name, refresh_freq and refresh_num to config file,

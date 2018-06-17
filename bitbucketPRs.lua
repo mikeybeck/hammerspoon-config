@@ -1,5 +1,5 @@
 -- Bitbucket Pull Requests monitor module for Hammerspoon
--- v0.31
+-- v0.32
 
 local inspect = require 'inspect' -- This isn't *required* but helps with debugging.  Remove this line if you don't have this file.
 
@@ -171,6 +171,7 @@ function doMenu(allPRs)
 		table.insert(menu, { title = '-' })
 
 		num_prs = 0
+		num_my_prs = 0
         num_approved = 0
         added_mine = false
         for key, value in pairs(allPRs) do
@@ -178,6 +179,7 @@ function doMenu(allPRs)
             if value.author == config.bitbucket.my_name and not added_mine then
                 table.insert(menu, { title = '-' })
                 added_mine = true
+                num_my_prs = num_my_prs + 1
             end
 
 			BBprev = hs.settings.get('BBprev')
@@ -255,7 +257,7 @@ function doMenu(allPRs)
             table.insert(menu, { title = 'Last updated today at ' .. lastUpdatedAt.time })
         end
 
-		num_unapproved = num_prs - num_approved
+		num_unapproved = num_prs - num_approved - num_my_prs
 
         menuColour = { red = 0, blue = 0, green = 0 }
         if timerValue >= config.bitbucket.refresh_num then
