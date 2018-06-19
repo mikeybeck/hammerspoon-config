@@ -8,6 +8,7 @@ local inspect = require 'inspect' -- This isn't *required* but helps with debugg
 -- Updated x time ago (currently displays 'updated at time').  Not sure if this is really possible...
 -- Add auto-update time/day settings, e.g. run 9am-6pm Mon-Fri
 -- Add remote branch (e.g. beta, production) indicator
+-- Fix bug which causes my PRs to be added to the rest when clicking on the menu
 
 --[[
 Note:
