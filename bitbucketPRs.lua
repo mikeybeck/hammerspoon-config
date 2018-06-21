@@ -1,5 +1,5 @@
 -- Bitbucket Pull Requests monitor module for Hammerspoon
--- v0.32
+-- v0.321
 
 local inspect = require 'inspect' -- This isn't *required* but helps with debugging.  Remove this line if you don't have this file.
 
@@ -8,7 +8,7 @@ local inspect = require 'inspect' -- This isn't *required* but helps with debugg
 -- Updated x time ago (currently displays 'updated at time').  Not sure if this is really possible...
 -- Add auto-update time/day settings, e.g. run 9am-6pm Mon-Fri
 -- Add remote branch (e.g. beta, production) indicator
--- Fix bug which causes my PRs to be added to the rest when clicking on the menu
+-- If possible, indicate when a PR has been updated (via number of commits?)
 
 --[[
 Note:
@@ -176,10 +176,11 @@ function doMenu(allPRs)
         num_approved = 0
         added_mine = false
         for key, value in pairs(allPRs) do
-
-            if value.author == config.bitbucket.my_name and not added_mine then
-                table.insert(menu, { title = '-' })
-                added_mine = true
+            if string.gsub(value.author, "%s+", "") == string.gsub(config.bitbucket.my_name, "%s+", "") then
+                if not added_mine then
+                    table.insert(menu, { title = '-' })
+                    added_mine = true
+                end
                 num_my_prs = num_my_prs + 1
             end
 
@@ -237,7 +238,8 @@ function doMenu(allPRs)
 	            bbkey = value.url:match( "([^/]+)$" )
 	            BBprev[bbkey] = { approvals = value.approvals, comments = value.comments }
 
-	            hs.settings.set('BBprev', BBprev )
+                hs.settings.set('BBprev', BBprev )
+                added_mine = false
 	       		doMenu(allPRs)
 			end }
 
@@ -274,5 +276,5 @@ function doMenu(allPRs)
 
         menuItem:setMenu(menu)
 
-        print(inspect(allPRs))
+        -- print(inspect(allPRs))
 end
