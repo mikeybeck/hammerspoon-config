@@ -1,5 +1,5 @@
 -- Bitbucket Pull Requests monitor module for Hammerspoon
--- v0.33
+-- v0.34
 
 local inspect = require 'inspect' -- This isn't *required* but helps with debugging.  Remove this line if you don't have this file.
 
@@ -7,7 +7,6 @@ local inspect = require 'inspect' -- This isn't *required* but helps with debugg
 -- Move icons/images to github repo & serve from there
 -- Updated x time ago (currently displays 'updated at time').  Not sure if this is really possible...
 -- Add auto-update time/day settings, e.g. run 9am-6pm Mon-Fri
--- If possible, indicate when a PR has been updated (via number of commits?)
 
 --[[
 Note:
@@ -72,6 +71,7 @@ function getPRs(username, password)
 				num_comments = value.comment_count
                 link = value.links.html.href
                 remote_branch = config.bitbucket.remote_branches[value.destination.branch.name]
+                last_updated = value.updated_on
 
 				local url2 = value.links.self.href
 
@@ -110,7 +110,7 @@ function getPRs(username, password)
 
                         build_state = 'SUCCESSFUL' --values3.state
 
-                        line = { approved = approved_by_me, author = author_name, title = title, approvals = num_approvals, comments = num_comments, state = build_state, url = link, branch = remote_branch }
+                        line = { approved = approved_by_me, author = author_name, title = title, approvals = num_approvals, comments = num_comments, state = build_state, url = link, branch = remote_branch, updated = last_updated }
 
                         if author_name == config.bitbucket.my_name then
                             table.insert(myPRs, line)
@@ -188,9 +188,9 @@ function doMenu(allPRs)
             bbkey = value.url:match( "([^/]+)$" )
 
 			if BBprev[bbkey] ~= nil then
-				value.prev = { approvals = BBprev[bbkey].approvals, comments = BBprev[bbkey].comments }
+				value.prev = { approvals = BBprev[bbkey].approvals, comments = BBprev[bbkey].comments, updated = BBprev[bbkey].updated }
 			else
-				value.prev = { approvals = 0, comments = 0 }
+				value.prev = { approvals = 0, comments = 0, updated = ' - ' }
             end
 
 			value.approvals2 = value.approvals .. ' '
@@ -202,7 +202,13 @@ function doMenu(allPRs)
 			if value.comments ~=
 				value.prev.comments then
 				value.comments2 = value.comments .. '*'
-			end
+            end
+
+            value.updated2 = ' - '
+			if value.updated ~=
+				value.prev.updated then
+				value.updated2 = ' * '
+            end
 
 			while string.len(value.author) < 15 do
 				value.author = value.author .. ' '
@@ -216,7 +222,7 @@ function doMenu(allPRs)
 				end
 			end
 
-			text = value.author .. ' ' .. value.branch .. ' - ' .. value.title .. ' | 👍 ' .. value.approvals2 .. ' | 💬 ' .. value.comments2
+			text = value.author .. ' ' .. value.branch .. value.updated2 .. value.title .. ' | 👍 ' .. value.approvals2 .. ' | 💬 ' .. value.comments2
 			color = { red = 0, blue = 0, green = 0 }
 			if value.approvals > 1 and value.state == 'SUCCESSFUL' then
 				color = { red = 0, blue = 0.5, green = 1 }
@@ -236,7 +242,7 @@ function doMenu(allPRs)
 		       	end
 
 	            bbkey = value.url:match( "([^/]+)$" )
-	            BBprev[bbkey] = { approvals = value.approvals, comments = value.comments }
+	            BBprev[bbkey] = { approvals = value.approvals, comments = value.comments, updated = value.updated }
 
                 hs.settings.set('BBprev', BBprev )
                 added_mine = false
