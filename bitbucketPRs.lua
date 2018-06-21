@@ -1,5 +1,5 @@
 -- Bitbucket Pull Requests monitor module for Hammerspoon
--- v0.321
+-- v0.33
 
 local inspect = require 'inspect' -- This isn't *required* but helps with debugging.  Remove this line if you don't have this file.
 
@@ -7,7 +7,6 @@ local inspect = require 'inspect' -- This isn't *required* but helps with debugg
 -- Move icons/images to github repo & serve from there
 -- Updated x time ago (currently displays 'updated at time').  Not sure if this is really possible...
 -- Add auto-update time/day settings, e.g. run 9am-6pm Mon-Fri
--- Add remote branch (e.g. beta, production) indicator
 -- If possible, indicate when a PR has been updated (via number of commits?)
 
 --[[
@@ -71,7 +70,8 @@ function getPRs(username, password)
 				author_name = value.author.display_name
 				title = value.title
 				num_comments = value.comment_count
-				link = value.links.html.href
+                link = value.links.html.href
+                remote_branch = config.bitbucket.remote_branches[value.destination.branch.name]
 
 				local url2 = value.links.self.href
 
@@ -110,7 +110,7 @@ function getPRs(username, password)
 
                         build_state = 'SUCCESSFUL' --values3.state
 
-                        line = { approved = approved_by_me, author = author_name, title = title, approvals = num_approvals, comments = num_comments, state = build_state, url = link }
+                        line = { approved = approved_by_me, author = author_name, title = title, approvals = num_approvals, comments = num_comments, state = build_state, url = link, branch = remote_branch }
 
                         if author_name == config.bitbucket.my_name then
                             table.insert(myPRs, line)
@@ -216,7 +216,7 @@ function doMenu(allPRs)
 				end
 			end
 
-			text = value.author .. ' - ' .. value.title .. ' | 👍 ' .. value.approvals2 .. ' | 💬 ' .. value.comments2
+			text = value.author .. ' ' .. value.branch .. ' - ' .. value.title .. ' | 👍 ' .. value.approvals2 .. ' | 💬 ' .. value.comments2
 			color = { red = 0, blue = 0, green = 0 }
 			if value.approvals > 1 and value.state == 'SUCCESSFUL' then
 				color = { red = 0, blue = 0.5, green = 1 }
