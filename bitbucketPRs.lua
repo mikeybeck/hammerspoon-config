@@ -7,6 +7,7 @@ local inspect = require 'inspect' -- This isn't *required* but helps with debugg
 -- Move icons/images to github repo & serve from there
 -- Updated x time ago (currently displays 'updated at time').  Not sure if this is really possible...
 -- Add auto-update time/day settings, e.g. run 9am-6pm Mon-Fri
+-- Don't show change indicators for my activity)
 
 --[[
 Note:
