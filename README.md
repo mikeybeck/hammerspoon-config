@@ -15,6 +15,7 @@ and init.lua which contains mostly testing stuff - in particular a Bitbucket pul
 
 ### Bitbucket Pull Requests Module Changelog:
 
+- 0.341: Add default branch indicator
 - 0.34: Add PR update indicator (- is replaced with *)
 - 0.33: Add remote branch indicator
 - 0.321: Fix bug which causes my PRs to be added to the rest when clicking on the menu,

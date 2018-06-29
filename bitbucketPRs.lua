@@ -1,5 +1,5 @@
 -- Bitbucket Pull Requests monitor module for Hammerspoon
--- v0.34
+-- v0.341
 
 local inspect = require 'inspect' -- This isn't *required* but helps with debugging.  Remove this line if you don't have this file.
 
@@ -7,7 +7,7 @@ local inspect = require 'inspect' -- This isn't *required* but helps with debugg
 -- Move icons/images to github repo & serve from there
 -- Updated x time ago (currently displays 'updated at time').  Not sure if this is really possible...
 -- Add auto-update time/day settings, e.g. run 9am-6pm Mon-Fri
--- Don't show change indicators for my activity)
+-- Don't show change indicators for my activity - might not be worthwhile due to extra API calls required
 
 --[[
 Note:
@@ -72,6 +72,10 @@ function getPRs(username, password)
 				num_comments = value.comment_count
                 link = value.links.html.href
                 remote_branch = config.bitbucket.remote_branches[value.destination.branch.name]
+                if remote_branch == nil then
+                    remote_branch = config.bitbucket.remote_branches['default']
+                end
+
                 last_updated = value.updated_on
 
 				local url2 = value.links.self.href
@@ -226,7 +230,7 @@ function doMenu(allPRs)
 			text = value.author .. ' ' .. value.branch .. value.updated2 .. value.title .. ' | 👍 ' .. value.approvals2 .. ' | 💬 ' .. value.comments2
 			color = { red = 0, blue = 0, green = 0 }
 			if value.approvals > 1 and value.state == 'SUCCESSFUL' then
-				color = { red = 0, blue = 0.5, green = 1 }
+				color = { red = 0, blue = 0.7, green = 1 }
 			elseif value.state ~= 'SUCCESSFUL' then
 				 color = { red = 1, blue = 0, green = 0 }
 			end
