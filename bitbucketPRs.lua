@@ -8,6 +8,7 @@ local inspect = require 'inspect' -- This isn't *required* but helps with debugg
 -- Updated x time ago (currently displays 'updated at time').  Not sure if this is really possible...
 -- Add auto-update time/day settings, e.g. run 9am-6pm Mon-Fri
 -- Don't show change indicators for my activity - might not be worthwhile due to extra API calls required
+-- Show more than 10 PRs max
 
 --[[
 Note:
@@ -20,16 +21,22 @@ local config = require 'config'
 hs.hotkey.bind({"cmd", "alt", "ctrl"}, "Down", function()
     getPRs(config.bitbucket.username, config.bitbucket.password)
 
-    autoRefresh(config.bitbucket.username, config.bitbucket.password)
+    refresh(config.bitbucket.username, config.bitbucket.password)
 end)
 
 local timerValue
+local stopped = false
 
-function autoRefresh(username, password)
+function refresh(username, password)
   timerValue = 0
   refreshTimer = hs.timer.doEvery(config.bitbucket.refresh_freq, function()
-        if timerValue > config.bitbucket.refresh_num then
-            refreshTimer.stop()
+        local time = hs.timer.localTime() * 36
+        if config.bitbucket.auto_refresh and (time < config.bitbucket.work_start or time > config.bitbucket.work_end) then
+            refreshTimer:stop()
+            stopped = true
+        elseif timerValue > config.bitbucket.refresh_num then
+            refreshTimer:stop()
+            stopped = true
         end
         getPRs(username, password)
         timerValue = timerValue + 1
@@ -274,7 +281,7 @@ function doMenu(allPRs)
 		num_unapproved = num_prs - num_approved - num_my_prs
 
         menuColour = { red = 0, blue = 0, green = 0 }
-        if timerValue >= config.bitbucket.refresh_num then
+        if stopped then
             -- PRs no longer being updated automatically
             menuColour = { red = 0.7, blue = 0, green = 0 }
         end
