@@ -6,7 +6,6 @@ local inspect = require 'inspect' -- This isn't *required* but helps with debugg
 -- TODO:
 -- Move icons/images to github repo & serve from there
 -- Updated x time ago (currently displays 'updated at time').  Not sure if this is really possible...
--- Add auto-update time/day settings, e.g. run 9am-6pm Mon-Fri
 -- Don't show change indicators for my activity - might not be worthwhile due to extra API calls required
 -- Show more than 10 PRs max
 
@@ -18,10 +17,14 @@ Build state isn't too important and requires a API call, so disabled for now
 
 local config = require 'config'
 
+local gmail = require "gmail"
+local credFile = require "gmail_creds"
+
+
 hs.hotkey.bind({"cmd", "alt", "ctrl"}, "Down", function()
     getPRs(config.bitbucket.username, config.bitbucket.password)
 
-    refresh(config.bitbucket.username, config.bitbucket.password)
+	refresh(config.bitbucket.username, config.bitbucket.password)
 end)
 
 local timerValue
@@ -30,17 +33,46 @@ local stopped = false
 function refresh(username, password)
   timerValue = 0
   refreshTimer = hs.timer.doEvery(config.bitbucket.refresh_freq, function()
-        local time = hs.timer.localTime() * 36
+        local time = hs.timer.localTime() / 36
         if config.bitbucket.auto_refresh and (time < config.bitbucket.work_start or time > config.bitbucket.work_end) then
             refreshTimer:stop()
             stopped = true
+            print(time)
         elseif timerValue > config.bitbucket.refresh_num then
             refreshTimer:stop()
             stopped = true
         end
-        getPRs(username, password)
+
+        if config.bitbucket.check_emails then
+        	if newPrEmail() then
+	     	    hs.alert.show('Reloading PRs!!!!...')
+        		getPRs(username, password)
+        	end
+        else
+        	getPRs(username, password)
+    	end
+
         timerValue = timerValue + 1
     end)
+end
+
+function newPrEmail()
+   local numPrEmails = hs.settings.get('numPrEmails') or 0
+   local url = "https://mail.google.com/mail/feed/atom/" .. config.bitbucket.gmail_prs_label
+   print(numPrEmails)
+   for index, creds in ipairs(credFile) do
+
+	gmail.mailCount(creds.username, creds.password, url, function(count)
+	     if count > numPrEmails then
+         	hs.settings.set('numPrEmails', count);
+         	hs.settings.set('newEmail', true);
+	    else
+         	hs.settings.set('numPrEmails', count);
+         	hs.settings.set('newEmail', false);
+	     end
+      end)
+	end
+	return hs.settings.get('newEmail')
 end
 
 

@@ -15,6 +15,7 @@ and init.lua which contains mostly testing stuff - in particular a Bitbucket pul
 
 ### Bitbucket Pull Requests Module Changelog:
 
+- 0.4: Add gmail tag checking option - PRs are updated when a new email with specified tag received
 - 0.35: Add ability to auto refresh during work hours (can set hours but not days)
 - 0.341: Add default branch indicator
 - 0.34: Add PR update indicator (- is replaced with *)
