@@ -46,10 +46,10 @@ function refresh(username, password)
         if config.bitbucket.check_emails then
         	if newPrEmail() then
 	     	    hs.alert.show('Reloading PRs!!!!...')
-        		getPRs(username, password)
+                getPRs(username, password)
         	end
         else
-        	getPRs(username, password)
+            getPRs(username, password)
     	end
 
         timerValue = timerValue + 1
@@ -307,7 +307,12 @@ function doMenu(allPRs)
         if lastUpdatedAt.date ~= os.date("%x") then
             table.insert(menu, { title = 'Last updated on ' .. lastUpdatedAt.date .. ' at ' .. lastUpdatedAt.time })
         else
-            table.insert(menu, { title = 'Last updated today at ' .. lastUpdatedAt.time })
+            table.insert(menu, { title = 'Last updated today at ' .. lastUpdatedAt.time,
+            fn = function(keyPressed)
+                if keyPressed.cmd then
+                    clearUpdates(allPRs)
+				end
+			end })
         end
 
 		num_unapproved = num_prs - num_approved - num_my_prs
@@ -328,3 +333,20 @@ function doMenu(allPRs)
 
         -- print(inspect(allPRs))
 end
+
+function clearUpdates(allPRs)
+    BBprev = hs.settings.get('BBprev')
+
+    for key, value in pairs(allPRs) do
+
+        bbkey = value.url:match( "([^/]+)$" )
+
+        BBprev[bbkey] = { approvals = value.approvals, comments = value.comments, updated = value.updated }
+
+        hs.settings.set('BBprev', BBprev )
+        added_mine = false
+    end
+
+    doMenu(allPRs)
+end
+
