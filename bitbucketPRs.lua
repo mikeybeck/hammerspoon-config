@@ -1,5 +1,5 @@
 -- Bitbucket Pull Requests monitor module for Hammerspoon
--- v0.341
+-- v0.35
 
 local inspect = require 'inspect' -- This isn't *required* but helps with debugging.  Remove this line if you don't have this file.
 
@@ -7,7 +7,6 @@ local inspect = require 'inspect' -- This isn't *required* but helps with debugg
 -- Move icons/images to github repo & serve from there
 -- Updated x time ago (currently displays 'updated at time').  Not sure if this is really possible...
 -- Don't show change indicators for my activity - might not be worthwhile due to extra API calls required
--- Show more than 10 PRs max
 
 --[[
 Note:
@@ -21,7 +20,8 @@ local credFile = require 'gmail_creds'
 
 local url =
     'https://bitbucket.org/api/2.0/repositories/' ..
-    config.bitbucket.repo_owner .. '/' .. config.bitbucket.repo_slug .. '/pullrequests/?pagelen=20'
+    config.bitbucket.repo_owner ..
+        '/' .. config.bitbucket.repo_slug .. '/pullrequests/?pagelen=' .. config.bitbucket.max_num_prs
 
 hs.hotkey.bind(
     {'cmd', 'alt', 'ctrl'},
@@ -125,10 +125,6 @@ function getPRs(username, password)
 
     menuItem:setTitle('...')
 
-    -- hs.http.asyncGet(
-    --     url,
-    --     {Authorization = 'Basic ' .. hs.base64.encode(username .. ':' .. password)},
-    --     function(status, body, headers)
     getURL(url, username, password)
 
     hs.timer.waitUntil(
@@ -138,14 +134,7 @@ function getPRs(username, password)
         function()
             parseBBJson(username, password)
 
-            -- if nextPage ~= '' and done1 == nil then
-            --     url = nextPage
-            --     done1 = true
-                -- getPRs(username, password, done1)
-            -- else
-                createMenu()
-            -- end
-
+            createMenu()
         end
     )
 end
@@ -173,30 +162,9 @@ end
 
 function parseBBJson(username, password)
     if status == 200 then
-        -- print(inspect(bodyTable))
-        -- print(hs.json.decode(body))
-        print(url)
-
-        if bodyTable == nil then
-            bodyTable = hs.json.decode(body)
-        else
-            print ('CONCAT')
-            bodyTable = TableConcat(bodyTable, hs.json.decode(body))
-        end
-
-        print ('tableLength')
-        print (tablelength(bodyTable))
-
-        -- print(inspect(bodyTable))
-
-        nextPage = bodyTable.next or ''
-
-        -- print(nextPage)
+        bodyTable = hs.json.decode(body)
 
         values = bodyTable.values[0] or bodyTable.values[1]
-
-        -- print(inspect('values'))
-        -- print(inspect(values))
 
         for key, value in pairs(bodyTable.values) do
             author_name = value.author.display_name
@@ -215,9 +183,6 @@ function parseBBJson(username, password)
             status2, body2, headers2 =
                 hs.http.get(url2, {Authorization = 'Basic ' .. hs.base64.encode(username .. ':' .. password)})
 
-            -- print(inspect('body2'))
-            -- print(inspect(body2))
-
             if status2 == 200 then
                 body2 = hs.json.decode(body2)
                 participants = body2.participants
@@ -233,19 +198,6 @@ function parseBBJson(username, password)
                         approved_by_me = true
                     end
                 end
-
-                -- local url3 = value.links.statuses.href
-
-                -- status3, body3, headers3 = hs.http.get(url3, {Authorization = "Basic " .. hs.base64.encode(username .. ":" .. password)})
-
-                -- if status3 == 200 then
-                -- 	body3 = hs.json.decode(body3)
-
-                -- 	print (inspect(body3))
-                -- 							print (inspect(headers3))
-                -- 													print (inspect(url3))
-
-                -- 	values3 = body3.values[0] or body3.values[1]
 
                 build_state = 'SUCCESSFUL' --values3.state
 
@@ -467,7 +419,7 @@ function clearUpdates(allPRs)
     doMenu(allPRs)
 end
 
-function TableConcat(t1, t2)
+function tableConcat(t1, t2)
     for i = 1, #t2 do
         t1[#t1 + 1] = t2[i]
     end
@@ -476,6 +428,8 @@ end
 
 function tablelength(T)
     local count = 0
-    for _ in pairs(T) do count = count + 1 end
+    for _ in pairs(T) do
+        count = count + 1
+    end
     return count
-  end
+end
