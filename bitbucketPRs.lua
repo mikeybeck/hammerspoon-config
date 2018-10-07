@@ -255,6 +255,35 @@ function createMenuTable(allPRs)
                         config.bitbucket.repo_owner .. '/' .. config.bitbucket.repo_slug .. '/pull-requests/new'
                 )
             end
+        },
+        {
+            title = 'Filter branches',
+            menu = {
+                {
+                    title = 'Beta',
+                    fn = function()
+                        filterBranches(allPRs, 'B')
+                    end
+                },
+                {
+                    title = 'Production',
+                    fn = function()
+                        filterBranches(allPRs, 'P')
+                    end
+                },
+                {
+                    title = 'X',
+                    fn = function()
+                        filterBranches(allPRs, 'X')
+                    end
+                },
+                {
+                    title = 'All',
+                    fn = function()
+                        filterBranches(allPRs, 'All')
+                    end
+                }
+            }
         }
     }
 
@@ -306,7 +335,7 @@ function createMenuTable(allPRs)
         end
 
         -- If author name is too long, get first initial and all of last name
-        if string.len(value.author) > 14 then
+        if string.len(value.author) > 15 then
             value.author = string.sub(value.author, 1, 1) .. string.match(value.author, '( .*)')
         end
 
@@ -436,6 +465,26 @@ function clearUpdates(allPRs)
     doMenu()
 end
 
+function filterBranches(allPRs, branch)
+    if allPRsCopy == nil then
+        allPRsCopy = table.copy(allPRs)
+    else
+        allPRs = table.copy(allPRsCopy)
+    end
+
+    if branch ~= 'All' then
+        for key, value in pairs(allPRs) do
+            print(inspect(value))
+            if value.branch ~= branch then
+                allPRs[key] = nil
+            end
+        end
+    end
+
+    createMenuTable(allPRs)
+    doMenu()
+end
+
 function tableConcat(t1, t2)
     for i = 1, #t2 do
         t1[#t1 + 1] = t2[i]
@@ -449,4 +498,16 @@ function tablelength(T)
         count = count + 1
     end
     return count
+end
+
+function table.copy(t)
+    local t2 = {}
+    for k, v in pairs(t) do
+        if type(v) == 'table' then
+            t2[k] = table.copy(v)
+        else
+            t2[k] = v
+        end
+    end
+    return t2
 end
