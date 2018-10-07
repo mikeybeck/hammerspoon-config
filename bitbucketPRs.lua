@@ -180,6 +180,8 @@ function parseBBJson(username, password)
 
             last_updated = value.updated_on
 
+            created_on = value.created_on
+
             local url2 = value.links.self.href
 
             status2, body2, headers2 =
@@ -212,7 +214,8 @@ function parseBBJson(username, password)
                     state = build_state,
                     url = link,
                     branch = remote_branch,
-                    updated = last_updated
+                    updated = last_updated,
+                    created = created_on
                 }
 
                 if author_name == config.bitbucket.my_name then
@@ -281,6 +284,47 @@ function createMenuTable(allPRs)
                     title = 'All',
                     fn = function()
                         filterBranches(allPRs, 'All')
+                    end
+                },
+                {
+                    title = 'Sorttetst comments',
+                    fn = function()
+                        sort(allPRs, 'comments')
+                    end
+                },
+                {
+                    title = 'Sorttetst updtaed',
+                    fn = function()
+                        sort(allPRs, 'updated')
+                    end
+                },
+                {
+                    title = 'Sorttetst created date',
+                    fn = function()
+                        sort(allPRs, 'created')
+                    end
+                }
+            }
+        },
+        {
+            title = 'Sort by',
+            menu = {
+                {
+                    title = 'Number of comments',
+                    fn = function()
+                        sort(allPRs, 'comments')
+                    end
+                },
+                {
+                    title = 'Most recently updated',
+                    fn = function()
+                        sort(allPRs, 'updated')
+                    end
+                },
+                {
+                    title = 'Most recently created',
+                    fn = function()
+                        sort(allPRs, 'created')
                     end
                 }
             }
@@ -480,6 +524,15 @@ function filterBranches(allPRs, branch)
             end
         end
     end
+
+    createMenuTable(allPRs)
+    doMenu()
+end
+
+function sort(allPRs, sortBy)
+    table.sort(allPRs, function (left, right)
+        return left[sortBy] < right[sortBy]
+    end)
 
     createMenuTable(allPRs)
     doMenu()
