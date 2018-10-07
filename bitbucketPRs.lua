@@ -266,43 +266,33 @@ function createMenuTable(allPRs)
                     title = 'Beta',
                     fn = function()
                         filterBranches(allPRs, 'B')
-                    end
+                    end,
+                    checked = filteringBy == 'B',
+                    tooltip = 'Show only beta branches'
                 },
                 {
                     title = 'Production',
                     fn = function()
                         filterBranches(allPRs, 'P')
-                    end
+                    end,
+                    checked = filteringBy == 'P',
+                    tooltip = 'Show only production branches'
                 },
                 {
                     title = 'X',
                     fn = function()
                         filterBranches(allPRs, 'X')
-                    end
+                    end,
+                    checked = filteringBy == 'X',
+                    tooltip = 'Show only default branches (i.e. not beta, production or development)'
                 },
                 {
                     title = 'All',
                     fn = function()
                         filterBranches(allPRs, 'All')
-                    end
-                },
-                {
-                    title = 'Sorttetst comments',
-                    fn = function()
-                        sort(allPRs, 'comments')
-                    end
-                },
-                {
-                    title = 'Sorttetst updtaed',
-                    fn = function()
-                        sort(allPRs, 'updated')
-                    end
-                },
-                {
-                    title = 'Sorttetst created date',
-                    fn = function()
-                        sort(allPRs, 'created')
-                    end
+                    end,
+                    checked = filteringBy == 'All',
+                    tooltip = 'Show all branches'
                 }
             }
         },
@@ -311,21 +301,27 @@ function createMenuTable(allPRs)
             menu = {
                 {
                     title = 'Number of comments',
-                    fn = function()
-                        sort(allPRs, 'comments')
-                    end
+                    fn = function(keyPressed)
+                        sort(allPRs, 'comments', keyPressed.cmd)
+                    end,
+                    checked = sortingBy == 'comments',
+                    tooltip = 'Cmd-click to sort in reverse order'
                 },
                 {
                     title = 'Most recently updated',
                     fn = function()
-                        sort(allPRs, 'updated')
-                    end
+                        sort(allPRs, 'updated', keyPressed.cmd)
+                    end,
+                    checked = sortingBy == 'updated',
+                    tooltip = 'Cmd-click to sort in reverse order'
                 },
                 {
                     title = 'Most recently created',
                     fn = function()
-                        sort(allPRs, 'created')
-                    end
+                        sort(allPRs, 'created', keyPressed.cmd)
+                    end,
+                    checked = sortingBy == 'created',
+                    tooltip = 'Cmd-click to sort in reverse order'
                 }
             }
         }
@@ -518,22 +514,35 @@ function filterBranches(allPRs, branch)
 
     if branch ~= 'All' then
         for key, value in pairs(allPRs) do
-            print(inspect(value))
             if value.branch ~= branch then
                 allPRs[key] = nil
             end
         end
     end
 
+    filteringBy = branch
     createMenuTable(allPRs)
     doMenu()
 end
 
-function sort(allPRs, sortBy)
-    table.sort(allPRs, function (left, right)
-        return left[sortBy] < right[sortBy]
-    end)
+function sort(allPRs, sortBy, reverse)
+    if reverse then
+        table.sort(
+            allPRs,
+            function(left, right)
+                return left[sortBy] > right[sortBy]
+            end
+        )
+    else
+        table.sort(
+            allPRs,
+            function(left, right)
+                return left[sortBy] < right[sortBy]
+            end
+        )
+    end
 
+    sortingBy = sortBy
     createMenuTable(allPRs)
     doMenu()
 end
