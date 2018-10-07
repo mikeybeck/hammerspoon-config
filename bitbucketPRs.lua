@@ -19,6 +19,10 @@ local config = require 'config'
 local gmail = require 'gmail'
 local credFile = require 'gmail_creds'
 
+local url =
+    'https://bitbucket.org/api/2.0/repositories/' ..
+    config.bitbucket.repo_owner .. '/' .. config.bitbucket.repo_slug .. '/pullrequests/?pagelen=20'
+
 hs.hotkey.bind(
     {'cmd', 'alt', 'ctrl'},
     'Down',
@@ -112,10 +116,6 @@ function getURL(url, username, password)
 end
 
 function getPRs(username, password)
-    local url =
-        'https://bitbucket.org/api/2.0/repositories/' ..
-        config.bitbucket.repo_owner .. '/' .. config.bitbucket.repo_slug .. '/pullrequests/'
-    local bodyTable = {}
     author_name = ''
     title = ''
     num_approvals = 0
@@ -137,25 +137,66 @@ function getPRs(username, password)
         end,
         function()
             parseBBJson(username, password)
+
+            -- if nextPage ~= '' and done1 == nil then
+            --     url = nextPage
+            --     done1 = true
+                -- getPRs(username, password, done1)
+            -- else
+                createMenu()
+            -- end
+
         end
     )
 end
 
+function createMenu()
+    -- Get current time for 'last updated at' value
+    local hour = os.date('%I')
+    if string.sub(hour, 1, 1) == '0' then
+        hour = string.sub(hour, 2)
+    end
+
+    lastUpdatedAt.time = os.date(hour .. ':%M:%S %p')
+    lastUpdatedAt.date = os.date('%x')
+
+    -- Add my PRs to other PRs
+    local allPRs = otherPRs
+    for i = 1, #myPRs do
+        allPRs[#allPRs + 1] = myPRs[i]
+    end
+
+    doMenu(allPRs)
+    -- end
+    -- )
+end
 
 function parseBBJson(username, password)
     if status == 200 then
-        bodyTable = hs.json.decode(body)
+        -- print(inspect(bodyTable))
+        -- print(hs.json.decode(body))
+        print(url)
 
-        print(inspect(bodyTable))
+        if bodyTable == nil then
+            bodyTable = hs.json.decode(body)
+        else
+            print ('CONCAT')
+            bodyTable = TableConcat(bodyTable, hs.json.decode(body))
+        end
+
+        print ('tableLength')
+        print (tablelength(bodyTable))
+
+        -- print(inspect(bodyTable))
 
         nextPage = bodyTable.next or ''
 
-        print(nextPage)
+        -- print(nextPage)
 
         values = bodyTable.values[0] or bodyTable.values[1]
 
-        print(inspect('values'))
-        print(inspect(values))
+        -- print(inspect('values'))
+        -- print(inspect(values))
 
         for key, value in pairs(bodyTable.values) do
             author_name = value.author.display_name
@@ -174,8 +215,8 @@ function parseBBJson(username, password)
             status2, body2, headers2 =
                 hs.http.get(url2, {Authorization = 'Basic ' .. hs.base64.encode(username .. ':' .. password)})
 
-            print(inspect('body2'))
-            print(inspect(body2))
+            -- print(inspect('body2'))
+            -- print(inspect(body2))
 
             if status2 == 200 then
                 body2 = hs.json.decode(body2)
@@ -232,30 +273,7 @@ function parseBBJson(username, password)
     else
         print('bb call failed with status code: ' .. status)
     end
-
-    -- Get current time for 'last updated at' value
-    local hour = os.date('%I')
-    if string.sub(hour, 1, 1) == '0' then
-        hour = string.sub(hour, 2)
-    end
-
-    lastUpdatedAt.time = os.date(hour .. ':%M:%S %p')
-    lastUpdatedAt.date = os.date('%x')
-
-    -- Add my PRs to other PRs
-    local allPRs = otherPRs
-    for i = 1, #myPRs do
-        allPRs[#allPRs + 1] = myPRs[i]
-    end
-
-    doMenu(allPRs)
-    -- end
-    -- )
 end
-
-
-
-
 
 menuItem = hs.menubar.new()
 
@@ -448,3 +466,16 @@ function clearUpdates(allPRs)
 
     doMenu(allPRs)
 end
+
+function TableConcat(t1, t2)
+    for i = 1, #t2 do
+        t1[#t1 + 1] = t2[i]
+    end
+    return t1
+end
+
+function tablelength(T)
+    local count = 0
+    for _ in pairs(T) do count = count + 1 end
+    return count
+  end
