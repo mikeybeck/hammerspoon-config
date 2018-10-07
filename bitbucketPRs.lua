@@ -1,5 +1,5 @@
 -- Bitbucket Pull Requests monitor module for Hammerspoon
--- v0.35
+-- v0.41
 
 local inspect = require 'inspect' -- This isn't *required* but helps with debugging.  Remove this line if you don't have this file.
 
@@ -156,8 +156,6 @@ function createMenu()
     end
 
     doMenu(allPRs)
-    -- end
-    -- )
 end
 
 function parseBBJson(username, password)
@@ -237,15 +235,16 @@ function doMenu(allPRs)
 
     prIcon =
         hs.image.imageFromURL(
-        'https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/Octicons-git-pull-request.svg/180px-Octicons-git-pull-request.svg.png'
+        'https://github.com/mikeybeck/hammerspoon-config/raw/master/180px-Octicons-git-pull-request.png'
     )
-    commentsIcon =
-        hs.image.imageFromURL(
-        'https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/Octicons-git-pull-request.svg/180px-Octicons-git-pull-request.svg.png'
+
+    prIcon =
+        hs.image.imageFromPath(
+        '180px-Octicons-git-pull-request.png'
     )
+
     size = {h = 23, w = 20}
     prIcon = prIcon:setSize(size)
-    commentsIcon = commentsIcon:setSize(size)
 
     menu = {
         {
@@ -254,6 +253,15 @@ function doMenu(allPRs)
                 hs.urlevent.openURL(
                     'https://bitbucket.org/' ..
                         config.bitbucket.repo_owner .. '/' .. config.bitbucket.repo_slug .. '/pull-requests/'
+                )
+            end
+        },
+        {
+            title = 'Create new pull request',
+            fn = function()
+                hs.urlevent.openURL(
+                    'https://bitbucket.org/' ..
+                        config.bitbucket.repo_owner .. '/' .. config.bitbucket.repo_slug .. '/pull-requests/new'
                 )
             end
         }
@@ -287,26 +295,36 @@ function doMenu(allPRs)
             value.prev = {approvals = 0, comments = 0, updated = ' - '}
         end
 
+        -- Add '*' to indicate a change in number of approvals
         value.approvals2 = value.approvals .. ' '
         if value.approvals ~= value.prev.approvals then
             value.approvals2 = value.approvals .. '*'
         end
 
+        -- Add superscript number to show number of unseen comments
         value.comments2 = value.comments
         value.commentsDiff = ' '
         if value.comments ~= value.prev.comments then
             value.commentsDiff = value.commentsDiff .. (value.comments - value.prev.comments)
         end
 
+        -- Add '*' to indicate that this PR has been updated
         value.updated2 = ' - '
         if value.updated ~= value.prev.updated then
             value.updated2 = ' * '
         end
 
+        -- If author name is too long, get first initial and all of last name
+        if string.len(value.author) > 14 then
+            value.author = string.sub(value.author, 1, 1) .. string.match(value.author, "( .*)")
+        end
+
+        -- Make all author name 'columns' the same length
         while string.len(value.author) < 15 do
             value.author = value.author .. ' '
         end
 
+        -- Make all title 'columns' the same length
         if string.len(value.title) > 35 then
             value.title = string.sub(value.title, 0, 32) .. '...'
         else
@@ -381,9 +399,10 @@ function doMenu(allPRs)
 
     num_unapproved = num_prs - num_approved - num_my_prs
 
+    -- Automatic update mode on
     menuColour = {red = 0, blue = 0, green = 0}
     if stopped then
-        -- PRs no longer being updated automatically
+        -- Automatic update mode off
         menuColour = {red = 0.7, blue = 0, green = 0}
     end
 
