@@ -1,13 +1,12 @@
 -- Bitbucket Pull Requests monitor module for Hammerspoon
--- v0.41
+-- v0.5
 
 local inspect = require 'inspect' -- This isn't *required* but helps with debugging.  Remove this line if you don't have this file.
 
 -- TODO:
 -- Updated x time ago (currently displays 'updated at time').  Not sure if this is really possible...
 -- Don't show change indicators for my activity - might not be worthwhile due to extra API calls required
--- Sorting options
--- Filtering options
+-- More filtering options?
 
 --[[
 Note:
@@ -293,6 +292,15 @@ function createMenuTable(allPRs)
                     end,
                     checked = filteringBy == 'All',
                     tooltip = 'Show all branches'
+                },
+                {
+                    title = 'New changes (experimental)',
+                    fn = function()
+                        onlyShowChanged = true
+                        filterBranches(allPRs, 'changed')
+                    end,
+                    checked = filteringBy == 'changed',
+                    tooltip = 'Show only branches with unseen changes'
                 }
             }
         },
@@ -309,7 +317,7 @@ function createMenuTable(allPRs)
                 },
                 {
                     title = 'Most recently updated',
-                    fn = function()
+                    fn = function(keyPressed)
                         sort(allPRs, 'updated', keyPressed.cmd)
                     end,
                     checked = sortingBy == 'updated',
@@ -317,7 +325,7 @@ function createMenuTable(allPRs)
                 },
                 {
                     title = 'Most recently created',
-                    fn = function()
+                    fn = function(keyPressed)
                         sort(allPRs, 'created', keyPressed.cmd)
                     end,
                     checked = sortingBy == 'created',
@@ -359,6 +367,7 @@ function createMenuTable(allPRs)
         value.approvals2 = value.approvals .. ' '
         if value.approvals ~= value.prev.approvals then
             value.approvals2 = value.approvals .. '*'
+            changed = true
         end
 
         -- Add superscript number to show number of unseen comments
@@ -366,12 +375,14 @@ function createMenuTable(allPRs)
         value.commentsDiff = ' '
         if value.comments ~= value.prev.comments then
             value.commentsDiff = value.commentsDiff .. (value.comments - value.prev.comments)
+            changed = true
         end
 
         -- Add '*' to indicate that this PR has been updated
         value.updated2 = ' - '
         if value.updated ~= value.prev.updated then
             value.updated2 = ' * '
+            changed = true
         end
 
         -- If author name is too long, get first initial and all of last name
@@ -432,8 +443,12 @@ function createMenuTable(allPRs)
             tooltip = 'Created: ' .. parseDate(value.created) .. '.\nUpdated: ' .. parseDate(value.updated)
         }
 
-        table.insert(menu, line)
-        num_prs = num_prs + 1
+        if onlyShowChanged == nil or (onlyShowChanged ~= nil and changed == true) then
+            table.insert(menu, line)
+            num_prs = num_prs + 1
+        end
+
+        changed = false
 
         if value.approved then
             num_approved = num_approved + 1
@@ -513,7 +528,7 @@ function filterBranches(allPRs, branch)
         allPRs = table.copy(allPRsCopy)
     end
 
-    if branch ~= 'All' then
+    if branch ~= 'All' and branch ~= 'changed' then
         for key, value in pairs(allPRs) do
             if value.branch ~= branch then
                 allPRs[key] = nil
@@ -524,6 +539,7 @@ function filterBranches(allPRs, branch)
     filteringBy = branch
     createMenuTable(allPRs)
     doMenu()
+    onlyShowChanged = nil
 end
 
 function sort(allPRs, sortBy, reverse)
@@ -577,11 +593,11 @@ end
 
 function parseDate(date)
     -- Assume format is RFC3339 (YYYY-MM-DD[T]HH:MM:SS[Z])
-    day = date:sub(9,10)
-    month = date:sub(6,7)
-    year = date:sub(1,4)
-    hour = date:sub(12,13)
-    minute = date:sub(15,16)
+    day = date:sub(9, 10)
+    month = date:sub(6, 7)
+    year = date:sub(1, 4)
+    hour = date:sub(12, 13)
+    minute = date:sub(15, 16)
 
     return day .. '/' .. month .. '/' .. year .. ' at ' .. hour .. ':' .. minute
 end
