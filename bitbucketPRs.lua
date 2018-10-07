@@ -4,9 +4,10 @@
 local inspect = require 'inspect' -- This isn't *required* but helps with debugging.  Remove this line if you don't have this file.
 
 -- TODO:
--- Move icons/images to github repo & serve from there
 -- Updated x time ago (currently displays 'updated at time').  Not sure if this is really possible...
 -- Don't show change indicators for my activity - might not be worthwhile due to extra API calls required
+-- Sorting options
+-- Filtering options
 
 --[[
 Note:
@@ -123,7 +124,9 @@ function getPRs(username, password)
     otherPRs = {}
     myPRs = {}
 
-    menuItem:setTitle('...')
+    -- Change menu colour to indicate loading
+    menuColour = {red = 0, blue = 1, green = 0}
+    doMenu()
 
     getURL(url, username, password)
 
@@ -155,7 +158,8 @@ function createMenu()
         allPRs[#allPRs + 1] = myPRs[i]
     end
 
-    doMenu(allPRs)
+    createMenuTable(allPRs)
+    doMenu()
 end
 
 function parseBBJson(username, password)
@@ -227,21 +231,8 @@ end
 
 menuItem = hs.menubar.new()
 
-function doMenu(allPRs)
-    if menuItem:isInMenubar() then
-        menuItem:delete()
-        menuItem = hs.menubar.new()
-    end
-
-    prIcon =
-        hs.image.imageFromURL(
-        'https://github.com/mikeybeck/hammerspoon-config/raw/master/180px-Octicons-git-pull-request.png'
-    )
-
-    prIcon =
-        hs.image.imageFromPath(
-        '180px-Octicons-git-pull-request.png'
-    )
+function createMenuTable(allPRs)
+    prIcon = hs.image.imageFromPath('180px-Octicons-git-pull-request.png')
 
     size = {h = 23, w = 20}
     prIcon = prIcon:setSize(size)
@@ -316,7 +307,7 @@ function doMenu(allPRs)
 
         -- If author name is too long, get first initial and all of last name
         if string.len(value.author) > 14 then
-            value.author = string.sub(value.author, 1, 1) .. string.match(value.author, "( .*)")
+            value.author = string.sub(value.author, 1, 1) .. string.match(value.author, '( .*)')
         end
 
         -- Make all author name 'columns' the same length
@@ -405,18 +396,24 @@ function doMenu(allPRs)
         -- Automatic update mode off
         menuColour = {red = 0.7, blue = 0, green = 0}
     end
+end
 
-    menuItem:setTitle(
-        hs.styledtext.new(
-            num_unapproved,
-            {color = menuColour, superscript = 1, baselineOffset = -3.0, paragraphStyle = {alignment = 'right'}}
-        ) ..
-            hs.styledtext.new('/', {color = menuColour, superscript = 0, baselineOffset = -1.0}) ..
-                hs.styledtext.new(
-                    num_prs,
-                    {color = menuColour, superscript = -1, paragraphStyle = {alignment = 'left'}}
-                )
-    )
+function doMenu()
+    if num_unapproved == nil then
+        menuItem:setTitle('...')
+    else
+        menuItem:setTitle(
+            hs.styledtext.new(
+                num_unapproved,
+                {color = menuColour, superscript = 1, baselineOffset = -3.0, paragraphStyle = {alignment = 'right'}}
+            ) ..
+                hs.styledtext.new('/', {color = menuColour, superscript = 0, baselineOffset = -1.0}) ..
+                    hs.styledtext.new(
+                        num_prs,
+                        {color = menuColour, superscript = -1, paragraphStyle = {alignment = 'left'}}
+                    )
+        )
+    end
 
     menuItem:setIcon(prIcon)
 
@@ -435,7 +432,8 @@ function clearUpdates(allPRs)
         added_mine = false
     end
 
-    doMenu(allPRs)
+    createMenuTable(allPRs)
+    doMenu()
 end
 
 function tableConcat(t1, t2)
