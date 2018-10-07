@@ -428,7 +428,8 @@ function createMenuTable(allPRs)
                 hs.settings.set('BBprev', BBprev)
                 added_mine = false
                 doMenu(allPRs)
-            end
+            end,
+            tooltip = 'Created: ' .. parseDate(value.created) .. '.\nUpdated: ' .. parseDate(value.updated)
         }
 
         table.insert(menu, line)
@@ -572,4 +573,15 @@ function table.copy(t)
         end
     end
     return t2
+end
+
+function parseDate(date)
+    -- Assume format is RFC3339 (YYYY-MM-DD[T]HH:MM:SS[Z])
+    day = date:sub(9,10)
+    month = date:sub(6,7)
+    year = date:sub(1,4)
+    hour = date:sub(12,13)
+    minute = date:sub(15,16)
+
+    return day .. '/' .. month .. '/' .. year .. ' at ' .. hour .. ':' .. minute
 end
