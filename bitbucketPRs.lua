@@ -7,6 +7,7 @@ local inspect = require 'inspect' -- This isn't *required* but helps with debugg
 -- Updated x time ago (currently displays 'updated at time').  Not sure if this is really possible...
 -- Don't show change indicators for my activity - might not be worthwhile due to extra API calls required
 -- More filtering options?
+-- Bug: my items get mixed in with the others when sorting
 
 --[[
 Note:
@@ -122,6 +123,8 @@ function getPRs(username, password)
     approved_by_me = false
     otherPRs = {}
     myPRs = {}
+    filteringBy = hs.settings.get('filteringBy')
+    sortingBy = hs.settings.get('sortingBy')
 
     -- Change menu colour to indicate loading
     menuColour = {red = 0, blue = 1, green = 0}
@@ -136,12 +139,26 @@ function getPRs(username, password)
         function()
             parseBBJson(username, password)
 
-            createMenu()
+            getAllPRs()
+
+            if sortingBy then
+                sort(allPRs, sortingBy, true)
+            end
+
+            if filteringBy then
+                filterBranches(allPRs, filteringBy)
+            end
+
+            if filteringBy == nil and sortingBy == nil then
+                getAllPRs()
+                createMenuTable(allPRs)
+                doMenu()
+            end
         end
     )
 end
 
-function createMenu()
+function getAllPRs()
     -- Get current time for 'last updated at' value
     local hour = os.date('%I')
     if string.sub(hour, 1, 1) == '0' then
@@ -152,13 +169,10 @@ function createMenu()
     lastUpdatedAt.date = os.date('%x')
 
     -- Add my PRs to other PRs
-    local allPRs = otherPRs
+    allPRs = otherPRs
     for i = 1, #myPRs do
         allPRs[#allPRs + 1] = myPRs[i]
     end
-
-    createMenuTable(allPRs)
-    doMenu()
 end
 
 function parseBBJson(username, password)
@@ -438,7 +452,8 @@ function createMenuTable(allPRs)
 
                 hs.settings.set('BBprev', BBprev)
                 added_mine = false
-                doMenu(allPRs)
+                createMenuTable(allPRs)
+                doMenu()
             end,
             tooltip = 'Created: ' .. parseDate(value.created) .. '.\nUpdated: ' .. parseDate(value.updated)
         }
@@ -537,6 +552,7 @@ function filterBranches(allPRs, branch)
     end
 
     filteringBy = branch
+    hs.settings.set('filteringBy', branch)
     createMenuTable(allPRs)
     doMenu()
     onlyShowChanged = nil
@@ -560,6 +576,7 @@ function sort(allPRs, sortBy, reverse)
     end
 
     sortingBy = sortBy
+    hs.settings.set('sortingBy', sortBy)
     createMenuTable(allPRs)
     doMenu()
 end
