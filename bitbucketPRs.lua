@@ -123,8 +123,10 @@ function getPRs(username, password)
     approved_by_me = false
     otherPRs = {}
     myPRs = {}
-    filteringBy = hs.settings.get('filteringBy')
-    sortingBy = hs.settings.get('sortingBy')
+    -- filteringBy = hs.settings.get('filteringBy')
+    -- sortingBy = hs.settings.get('sortingBy')
+    hs.settings.set('filteringBy', nil)
+    hs.settings.set('sortingBy', nil)
 
     -- Change menu colour to indicate loading
     menuColour = {red = 0, blue = 1, green = 0}
@@ -139,18 +141,17 @@ function getPRs(username, password)
         function()
             parseBBJson(username, password)
 
-            getAllPRs()
+            local allPRs = getAllPRs()
 
-            if sortingBy then
-                sort(allPRs, sortingBy, true)
-            end
+            -- if sortingBy then
+            --     sort(allPRs, sortingBy, true)
+            -- end
 
-            if filteringBy then
-                filterBranches(allPRs, filteringBy)
-            end
+            -- if filteringBy then
+            --     filterBranches(allPRs, filteringBy)
+            -- end
 
             if filteringBy == nil and sortingBy == nil then
-                getAllPRs()
                 createMenuTable(allPRs)
                 doMenu()
             end
@@ -169,10 +170,12 @@ function getAllPRs()
     lastUpdatedAt.date = os.date('%x')
 
     -- Add my PRs to other PRs
-    allPRs = otherPRs
+    local allPRs = otherPRs
     for i = 1, #myPRs do
         allPRs[#allPRs + 1] = myPRs[i]
     end
+
+    return allPRs
 end
 
 function parseBBJson(username, password)
@@ -558,7 +561,8 @@ function filterBranches(allPRs, branch)
     onlyShowChanged = nil
 end
 
-function sort(allPRs, sortBy, reverse)
+function sort(allPRs2, sortBy, reverse)
+    local allPRs = allPRs2
     if reverse then
         table.sort(
             allPRs,
