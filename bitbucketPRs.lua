@@ -123,10 +123,10 @@ function getPRs(username, password)
     approved_by_me = false
     otherPRs = {}
     myPRs = {}
-    -- filteringBy = hs.settings.get('filteringBy')
-    -- sortingBy = hs.settings.get('sortingBy')
     hs.settings.set('filteringBy', nil)
     hs.settings.set('sortingBy', nil)
+    filteringBy = hs.settings.get('filteringBy')
+    sortingBy = hs.settings.get('sortingBy')
 
     -- Change menu colour to indicate loading
     menuColour = {red = 0, blue = 1, green = 0}
