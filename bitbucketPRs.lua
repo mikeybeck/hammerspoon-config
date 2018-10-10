@@ -354,6 +354,38 @@ function createMenuTable(allPRs)
 
     table.insert(menu, {title = '-'})
 
+    addPRsToMenu(allPRs)
+
+    table.insert(menu, {title = '-'})
+
+    if lastUpdatedAt.date ~= os.date('%x') then
+        table.insert(menu, {title = 'Last updated on ' .. lastUpdatedAt.date .. ' at ' .. lastUpdatedAt.time})
+    else
+        table.insert(
+            menu,
+            {
+                title = 'Last updated today at ' .. lastUpdatedAt.time,
+                fn = function(keyPressed)
+                    if keyPressed.cmd then
+                        clearUpdates(allPRs)
+                    end
+                end
+            }
+        )
+    end
+
+    num_unapproved = num_prs - num_approved - num_my_prs
+
+    -- Automatic update mode on
+    menuColour = {red = 0, blue = 0, green = 0}
+    if stopped then
+        -- Automatic update mode off
+        menuColour = {red = 0.7, blue = 0, green = 0}
+    end
+end
+
+
+function addPRsToMenu(allPRs)
     num_prs = 0
     num_my_prs = 0
     num_approved = 0
@@ -472,34 +504,8 @@ function createMenuTable(allPRs)
             num_approved = num_approved + 1
         end
     end
-
-    table.insert(menu, {title = '-'})
-
-    if lastUpdatedAt.date ~= os.date('%x') then
-        table.insert(menu, {title = 'Last updated on ' .. lastUpdatedAt.date .. ' at ' .. lastUpdatedAt.time})
-    else
-        table.insert(
-            menu,
-            {
-                title = 'Last updated today at ' .. lastUpdatedAt.time,
-                fn = function(keyPressed)
-                    if keyPressed.cmd then
-                        clearUpdates(allPRs)
-                    end
-                end
-            }
-        )
-    end
-
-    num_unapproved = num_prs - num_approved - num_my_prs
-
-    -- Automatic update mode on
-    menuColour = {red = 0, blue = 0, green = 0}
-    if stopped then
-        -- Automatic update mode off
-        menuColour = {red = 0.7, blue = 0, green = 0}
-    end
 end
+
 
 function doMenu()
     if num_unapproved == nil then

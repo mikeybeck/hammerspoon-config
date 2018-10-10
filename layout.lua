@@ -45,6 +45,23 @@ local leftScreen = hs.screen.allScreens()[2];
 local middleScreen = hs.screen.allScreens()[3];
 local rightScreen = hs.screen.allScreens()[1];
 
+-- Slack
+hs.hotkey.bind({"cmd", "alt", "ctrl"}, "pad0", function()
+    sendToSlack('+:thumbsup')
+end)
+hs.hotkey.bind({"cmd", "alt", "ctrl"}, "pad7", function()
+    sendToSlack('+:wave')
+end)
+
+function sendToSlack(message)
+    -- (Requires Slack already be visible on RHS screen)
+    focusScreen(rightScreen)
+    hs.eventtap.keyStrokes(message)
+    hs.timer.usleep(1000)
+    hs.eventtap.keyStroke({'cmd'}, 'RETURN')
+    hs.eventtap.keyStroke({'cmd'}, 'RETURN')
+    hs.eventtap.keyStroke({'cmd'}, 'RETURN')
+end
 
 -- DISPLAY FOCUS SWITCHING --
 -- FROM: http://bezhermoso.github.io/2016/01/20/making-perfect-ramen-lua-os-x-automation-with-hammerspoon/
