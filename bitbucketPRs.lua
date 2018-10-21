@@ -47,6 +47,7 @@ local timerValue
 local stopped = false
 
 function refresh(username, password)
+    print('refresh()')
     timerValue = 0
     refreshTimer =
         hs.timer.doEvery(
@@ -80,6 +81,7 @@ function refresh(username, password)
 end
 
 function newPrEmail()
+    print('newPrEmail()')
     local numPrEmails = hs.settings.get('numPrEmails') or 0
     local url = 'https://mail.google.com/mail/feed/atom/' .. config.bitbucket.gmail_prs_label
     print(numPrEmails)
@@ -105,6 +107,7 @@ end
 local lastUpdatedAt = {}
 
 function getURL(url, username, password)
+    print('getURL()')
     hs.http.asyncGet(
         url,
         {Authorization = 'Basic ' .. hs.base64.encode(username .. ':' .. password)},
@@ -117,6 +120,7 @@ function getURL(url, username, password)
 end
 
 function getPRs(username, password)
+    print('getPRs()')
     author_name = ''
     title = ''
     num_approvals = 0
@@ -160,6 +164,7 @@ function getPRs(username, password)
 end
 
 function getAllPRs()
+    print('getAllPRs()')
     -- Get current time for 'last updated at' value
     local hour = os.date('%I')
     if string.sub(hour, 1, 1) == '0' then
@@ -179,6 +184,7 @@ function getAllPRs()
 end
 
 function parseBBJson(username, password)
+    print('parseBBJson()')
     if status == 200 then
         bodyTable = hs.json.decode(body)
 
@@ -251,6 +257,7 @@ end
 menuItem = hs.menubar.new()
 
 function createMenuTable(allPRs)
+    print('createMenuTable()')
     prIcon = hs.image.imageFromPath('180px-Octicons-git-pull-request.png')
 
     size = {h = 23, w = 20}
@@ -386,6 +393,7 @@ end
 
 
 function addPRsToMenu(allPRs)
+    print('addPRsToMenu()')
     num_prs = 0
     num_my_prs = 0
     num_approved = 0
@@ -508,18 +516,19 @@ end
 
 
 function doMenu()
+    print('doMenu()')
     if num_unapproved == nil then
         menuItem:setTitle('...')
     else
         menuItem:setTitle(
             hs.styledtext.new(
                 num_unapproved,
-                {color = menuColour, superscript = 1, baselineOffset = -3.0, paragraphStyle = {alignment = 'right'}}
+                {color = menuColour, superscript = 1, baselineOffset = -7, paragraphStyle = {alignment = 'right'}}
             ) ..
-                hs.styledtext.new('/', {color = menuColour, superscript = 0, baselineOffset = -1.0}) ..
+                hs.styledtext.new('/', {color = menuColour, superscript = 0, baselineOffset = 0}) ..
                     hs.styledtext.new(
                         num_prs,
-                        {color = menuColour, superscript = -1, paragraphStyle = {alignment = 'left'}}
+                        {color = menuColour, superscript = -1, baselineOffset = 5, paragraphStyle = {alignment = 'left'}}
                     )
         )
     end
@@ -530,6 +539,7 @@ function doMenu()
 end
 
 function clearUpdates(allPRs)
+    print('clearUpdates()')
     BBprev = hs.settings.get('BBprev')
 
     for key, value in pairs(allPRs) do
@@ -546,6 +556,7 @@ function clearUpdates(allPRs)
 end
 
 function filterBranches(allPRs, branch)
+    print('filterBranches()')
     if allPRsCopy == nil then
         allPRsCopy = table.copy(allPRs)
     else
@@ -568,6 +579,7 @@ function filterBranches(allPRs, branch)
 end
 
 function sort(allPRs2, sortBy, reverse)
+    print('sort()')
     local allPRs = allPRs2
     if reverse then
         table.sort(
@@ -592,6 +604,7 @@ function sort(allPRs2, sortBy, reverse)
 end
 
 function tableConcat(t1, t2)
+    print('tableConcat()')
     for i = 1, #t2 do
         t1[#t1 + 1] = t2[i]
     end
@@ -599,6 +612,7 @@ function tableConcat(t1, t2)
 end
 
 function tablelength(T)
+    print('tablelength()')
     local count = 0
     for _ in pairs(T) do
         count = count + 1
@@ -607,6 +621,7 @@ function tablelength(T)
 end
 
 function table.copy(t)
+    print('table.copy()')
     local t2 = {}
     for k, v in pairs(t) do
         if type(v) == 'table' then
@@ -619,6 +634,7 @@ function table.copy(t)
 end
 
 function parseDate(date)
+    print('parseDate()')
     -- Assume format is RFC3339 (YYYY-MM-DD[T]HH:MM:SS[Z])
     day = date:sub(9, 10)
     month = date:sub(6, 7)
