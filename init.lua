@@ -24,7 +24,8 @@ menubar.init()
 -- require "test"
 -- test.init()
 
-require "bitbucketPRs"
+-- require "bitbucketPRs"
+hs.loadSpoon("BitbucketPullRequests")
 
 require "muteMic"
 
