@@ -6,7 +6,7 @@ _M.bitbucket = {
     repo_owner = '',
     repo_slug = '',
     my_name = '', -- My Bitbucket username
-    refresh_freq = 1200, -- How frequently to refresh the menu, in seconds
+    refresh_freq = 120, -- How frequently to refresh the menu, in seconds
     refresh_num = 300, -- How many times to refresh before stopping
     auto_refresh = true, -- Whether to keep refreshing during work hours
     work_start = 0800, -- Work start time in 24 hour format
@@ -18,7 +18,7 @@ _M.bitbucket = {
         production = 'P',
         default = 'X' -- Used when none of the other branches match
     },
-    check_emails = true,
+    check_emails = false,
     gmail_prs_label = '',
     max_num_prs = 30 -- maximum number of PRs to fetch
 }
