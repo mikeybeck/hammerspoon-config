@@ -1,4 +1,3 @@
-
 -- TODO:
 -- Updated x time ago (currently displays 'updated at time').  Not sure if this is really possible...
 -- Don't show change indicators for my activity - might not be worthwhile due to extra API calls required
@@ -14,14 +13,13 @@ Note:
 Build state currently not functioning; I'm not sure why the BB API isn't returning the status value
 Build state isn't too important and requires a API call, so disabled for now
 ]]
-
 local obj = {}
 obj.__index = obj
 
 -- Internal function used to find our location, so we know where to load files from
 local function scriptPath()
-    local str = debug.getinfo(2, "S").source:sub(2)
-    return str:match("(.*/)")
+    local str = debug.getinfo(2, 'S').source:sub(2)
+    return str:match('(.*/)')
 end
 local spoonPath = scriptPath()
 
@@ -36,68 +34,70 @@ local config = includeFile('config')
 local gmail = includeFile('gmail')
 local credFile = includeFile('gmail_creds')
 
-local url =
+local prUrl =
     'https://bitbucket.org/api/2.0/repositories/' ..
     config.bitbucket.repo_owner ..
         '/' .. config.bitbucket.repo_slug .. '/pullrequests/?pagelen=' .. config.bitbucket.max_num_prs
 
-hyper:bind({},
+hyper:bind(
+    {},
     'Down',
     function()
         hyper.triggered = true
         getPRs(config.bitbucket.username, config.bitbucket.password)
 
         refresh(config.bitbucket.username, config.bitbucket.password)
-
     end
 )
 
-hyper:bind({},
+hyper:bind(
+    {},
     'x',
     function()
         hs.alert.show('Reloading PRs...')
+
+        status = nil
+        body = nil
+        headers = nil
 
         getPRs(config.bitbucket.username, config.bitbucket.password)
         hyper.triggered = true
     end
 )
 
-hyper:bind({},
+hyper:bind(
+    {},
     'y',
     function()
         hs.alert.show('Reloading PRs2...')
+
+        local allPRs = getAllPRs()
+
+        print('allPRs: ' .. inspect(allPRs))
+
+        createMenuTable(allPRs)
 
         doMenu()
         hyper.triggered = true
     end
 )
 
--- hyper:bind({},
---     'z',
---     function()
---         hs.alert.show('DOMenu')
+hyper:bind(
+    {},
+    'p',
+    function()
+        hs.alert.show('Reset')
 
---         doMenu()
---         -- hyper.triggered = true
---     end
--- )
+        status = nil
+        body = nil
+        headers = nil
 
--- hyper:bind({},
---     'a',
---     function()
---         hs.alert.show('createmenutable')
-
---         createMenuTable(allPRs)
---         -- hyper.triggered = true
---     end
--- )
+        hyper.triggered = true
+    end
+)
 
 local timerValue
 local stopped = false
-
-local menuPRs = table
-local menu_copy = table
-
 
 function refresh(username, password)
     print('refresh()')
@@ -189,16 +189,21 @@ function getPRs(username, password)
     menuColour = {red = 0, blue = 1, green = 0}
     doMenu()
 
-    getURL(url, username, password)
+    print('prUrl: ' .. prUrl)
+
+    getURL(prUrl, username, password)
 
     hs.timer.waitUntil(
         function()
             return status ~= nil
         end,
         function()
+            print('status: ' .. status)
             parseBBJson(username, password)
 
             local allPRs = getAllPRs()
+
+            print('allPRs: ' .. inspect(allPRs))
 
             -- if sortingBy then
             --     sort(allPRs, sortingBy, true)
@@ -208,10 +213,10 @@ function getPRs(username, password)
             --     filterBranches(allPRs, filteringBy)
             -- end
 
-            if filteringBy == nil and sortingBy == nil then
+            -- if filteringBy == nil and sortingBy == nil then
                 createMenuTable(allPRs)
                 doMenu()
-            end
+            -- end
         end
     )
 end
@@ -253,9 +258,9 @@ function parseBBJson(username, password)
                 remote_branch = config.bitbucket.remote_branches['default']
             end
 
-            last_updated = value.updated_on
+            last_updated = parseDate(value.updated_on)
 
-            created_on = value.created_on
+            created_on = parseDate(value.created_on)
 
             local url2 = value.links.self.href
 
@@ -445,7 +450,6 @@ function createMenuTable(allPRs)
     end
 end
 
-
 function addPRsToMenu(allPRs)
     print('addPRsToMenu()')
     num_prs = 0
@@ -515,24 +519,8 @@ function addPRsToMenu(allPRs)
             end
         end
 
-        text =
-            value.author ..
-            ' ' ..
-                value.branch ..
-                    value.updated2 .. value.title .. ' | 👍 ' .. value.approvals2 .. ' | 💬 ' .. value.comments2
-        color = {red = 0, blue = 0, green = 0}
-        if value.approvals > 1 and value.state == 'SUCCESSFUL' then
-            color = {red = 0, blue = 0.7, green = 1}
-        elseif value.state ~= 'SUCCESSFUL' then
-            color = {red = 1, blue = 0, green = 0}
-        end
-
         line = {
-            title = hs.styledtext.new(text, {color = color, font = 'Monaco'}) ..
-                hs.styledtext.new(
-                    value.commentsDiff,
-                    {color = color, baselineOffset = 3.0, font = {name = 'Monaco', size = 10}}
-                ),
+            title = getTitleText(value),
             checked = value.approved,
             fn = function(keyPressed)
                 local openURL = true
@@ -549,22 +537,22 @@ function addPRsToMenu(allPRs)
 
                 hs.settings.set('BBprev', BBprev)
                 added_mine = false
-                -- createMenuTable(allPRs) -- Would be better to just update this single item in the table
-                -- second param = update (optional).  Not yet implemented
-                -- createMenuTable(allPRs, value.url) -- Would be better to just update this single item in the table
-                updateMenuItem = {approvals = value.approvals, comments = value.comments, updated = value.updated,
-                            author = value.author, branch = value.branch, title = value.title}
+                updateMenuItem = {
+                    approvals = value.approvals,
+                    comments = value.comments,
+                    updated = value.updated,
+                    author = value.author,
+                    branch = value.branch,
+                    title = value.title
+                }
                 updatePR(updateMenuItem, value.url)
-
-                -- doMenu()
             end,
-            tooltip = 'Created: ' .. parseDate(value.created) .. '.\nUpdated: ' .. parseDate(value.updated),
+            tooltip = 'Created: ' .. value.created .. '.\nUpdated: ' .. value.updated,
             url = value.url
         }
 
         if onlyShowChanged == nil or (onlyShowChanged ~= nil and changed == true) then
             table.insert(menu, line)
-            table.insert(menuPRs, line)
             num_prs = num_prs + 1
         end
 
@@ -579,24 +567,24 @@ end
 function getTitleText(value)
     print('getTitleText()')
     text =
-            value.author ..
-            ' ' ..
-                value.branch ..
-                    value.updated2 .. value.title .. ' | 👍 ' .. value.approvals2 .. ' | 💬 ' .. value.comments2
-        color = {red = 0, blue = 0, green = 0}
-        if value.approvals > 1 and value.state == 'SUCCESSFUL' then
-            color = {red = 0, blue = 0.7, green = 1}
-        elseif value.state ~= 'SUCCESSFUL' then
-            color = {red = 1, blue = 0, green = 0}
-        end
+        value.author ..
+        ' ' ..
+            value.branch .. value.updated2 .. value.title .. ' | 👍 ' .. value.approvals2 .. ' | 💬 ' .. value.comments2
+    color = {red = 0, blue = 0, green = 0}
+    if value.approvals > 1 and value.state == 'SUCCESSFUL' then
+        color = {red = 0, blue = 0.7, green = 1}
+    elseif value.state ~= 'SUCCESSFUL' then
+        color = {red = 1, blue = 0, green = 0}
+    end
 
-        title = hs.styledtext.new(text, {color = color, font = 'Monaco'}) ..
+    title =
+        hs.styledtext.new(text, {color = color, font = 'Monaco'}) ..
         hs.styledtext.new(
             value.commentsDiff,
             {color = color, baselineOffset = 3.0, font = {name = 'Monaco', size = 10}}
         )
 
-        return title
+    return title
 end
 
 -- Update single PR in menu
@@ -638,7 +626,12 @@ function doMenu()
                 hs.styledtext.new('/', {color = menuColour, superscript = 0, baselineOffset = 0}) ..
                     hs.styledtext.new(
                         num_prs,
-                        {color = menuColour, superscript = -1, baselineOffset = 5, paragraphStyle = {alignment = 'left'}}
+                        {
+                            color = menuColour,
+                            superscript = -1,
+                            baselineOffset = 5,
+                            paragraphStyle = {alignment = 'left'}
+                        }
                     )
         )
     end
